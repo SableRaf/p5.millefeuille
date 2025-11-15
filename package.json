@@ -9,7 +9,8 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "test": "jest",
-    "lint": "eslint src/**/*.js"
+    "lint": "eslint src/**/*.js",
+    "examples": "lsof -ti:8000 | xargs kill -9 2>/dev/null || true && npx http-server . -p 8000 -o /examples/"
   },
   "keywords": [
     "p5js",
