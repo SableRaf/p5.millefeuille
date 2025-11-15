@@ -171,10 +171,15 @@ export class LayerUI {
         opacityValue.textContent = opacityPercent + '%';
       }
 
-      // Update blend mode
+      // Update blend mode select and indicator
       const blendSelect = layerEl.querySelector('.p5ml-blend-select');
+      const blendIndicator = layerEl.querySelector('.p5ml-blend-indicator');
       if (blendSelect) {
         blendSelect.value = layer.blendMode;
+      }
+      if (blendIndicator) {
+        blendIndicator.textContent = this._getBlendModeLetter(layer.blendMode);
+        blendIndicator.title = `Blend Mode: ${layer.blendMode}`;
       }
     });
 
@@ -203,44 +208,42 @@ export class LayerUI {
     const layerEl = this.layerElements.get(layerId);
     if (!layerEl) return;
 
-    const thumbnails = layerEl.querySelectorAll('.p5ml-thumbnail-canvas');
+    const canvas = layerEl.querySelector('.p5ml-thumbnail-canvas');
+    if (!canvas) return;
 
-    thumbnails.forEach(canvas => {
-      const sourceType = canvas.dataset.sourceType;
-      const ctx = canvas.getContext('2d');
-      const source = sourceType === 'Framebuffer' ? layer.framebuffer : layer.mask;
+    const ctx = canvas.getContext('2d');
+    const source = layer.framebuffer;
 
-      if (!source) return;
+    if (!source) return;
 
-      try {
-        // Clear and redraw checkerboard
-        this._drawCheckerboard(ctx, canvas.width, canvas.height);
+    try {
+      // Clear and redraw checkerboard
+      this._drawCheckerboard(ctx, canvas.width, canvas.height);
 
-        // Get framebuffer content as a p5.Image using the get() method
-        let imageData;
+      // Get framebuffer content as a p5.Image using the get() method
+      let imageData;
 
-        if (typeof source.get === 'function') {
-          imageData = source.get();
-        } else if (source.canvas) {
-          imageData = source;
-        }
-
-        if (imageData && imageData.canvas) {
-          const sourceCanvas = imageData.canvas;
-
-          // Calculate aspect-fit scaling
-          const scale = Math.min(canvas.width / sourceCanvas.width, canvas.height / sourceCanvas.height);
-          const scaledWidth = sourceCanvas.width * scale;
-          const scaledHeight = sourceCanvas.height * scale;
-          const x = (canvas.width - scaledWidth) / 2;
-          const y = (canvas.height - scaledHeight) / 2;
-
-          ctx.drawImage(sourceCanvas, x, y, scaledWidth, scaledHeight);
-        }
-      } catch (e) {
-        console.debug('Could not render thumbnail:', e);
+      if (typeof source.get === 'function') {
+        imageData = source.get();
+      } else if (source.canvas) {
+        imageData = source;
       }
-    });
+
+      if (imageData && imageData.canvas) {
+        const sourceCanvas = imageData.canvas;
+
+        // Calculate aspect-fit scaling
+        const scale = Math.min(canvas.width / sourceCanvas.width, canvas.height / sourceCanvas.height);
+        const scaledWidth = sourceCanvas.width * scale;
+        const scaledHeight = sourceCanvas.height * scale;
+        const x = (canvas.width - scaledWidth) / 2;
+        const y = (canvas.height - scaledHeight) / 2;
+
+        ctx.drawImage(sourceCanvas, x, y, scaledWidth, scaledHeight);
+      }
+    } catch (e) {
+      console.debug('Could not render thumbnail:', e);
+    }
   }
 
   /**
@@ -255,14 +258,47 @@ export class LayerUI {
     // Add click handler to update thumbnails on demand
     layerEl.addEventListener('click', (e) => {
       // Only update if not clicking on interactive controls
-      if (!e.target.matches('input, select, button')) {
+      if (!e.target.matches('input, select, button, .p5ml-blend-indicator')) {
         this._updateLayerThumbnail(layer.id);
       }
     });
 
-    // Layer header with visibility toggle and name
-    const header = document.createElement('div');
-    header.className = 'p5ml-layer-header';
+    // Main layer row (Procreate style: thumbnail | name | blend letter | checkbox)
+    const layerRow = document.createElement('div');
+    layerRow.className = 'p5ml-layer-row';
+
+    // Left: Thumbnail
+    const thumbnail = this._createThumbnail();
+    thumbnail.className = 'p5ml-layer-thumbnail';
+    layerRow.appendChild(thumbnail);
+
+    // Center: Layer name
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'p5ml-layer-name';
+    nameSpan.textContent = layer.name;
+    layerRow.appendChild(nameSpan);
+
+    // Right side controls container
+    const rightControls = document.createElement('div');
+    rightControls.className = 'p5ml-right-controls';
+
+    // Blend mode letter indicator (clickable)
+    const blendIndicator = document.createElement('button');
+    blendIndicator.className = 'p5ml-blend-indicator';
+    blendIndicator.textContent = this._getBlendModeLetter(layer.blendMode);
+    blendIndicator.title = `Blend Mode: ${layer.blendMode}`;
+    blendIndicator.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = layerEl.querySelector('.p5ml-layer-dropdown');
+      const isExpanded = dropdown.style.display === 'block';
+
+      // Close all other dropdowns first
+      document.querySelectorAll('.p5ml-layer-dropdown').forEach(d => {
+        d.style.display = 'none';
+      });
+
+      dropdown.style.display = isExpanded ? 'none' : 'block';
+    });
 
     // Visibility checkbox
     const visibilityCheckbox = document.createElement('input');
@@ -271,42 +307,25 @@ export class LayerUI {
     visibilityCheckbox.checked = layer.visible;
     visibilityCheckbox.title = 'Toggle visibility';
     visibilityCheckbox.addEventListener('change', (e) => {
+      e.stopPropagation();
       this.layerSystem.setVisible(layer.id, e.target.checked);
     });
 
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'p5ml-layer-name';
-    nameSpan.textContent = layer.name;
+    rightControls.appendChild(blendIndicator);
+    rightControls.appendChild(visibilityCheckbox);
+    layerRow.appendChild(rightControls);
 
-    header.appendChild(visibilityCheckbox);
-    header.appendChild(nameSpan);
-
-    // Thumbnails section (framebuffer and mask)
-    const thumbnails = document.createElement('div');
-    thumbnails.className = 'p5ml-thumbnails';
-
-    // Framebuffer thumbnail
-    const fbThumb = this._createThumbnail(layer.framebuffer, 'Framebuffer');
-    thumbnails.appendChild(fbThumb);
-
-    // Mask thumbnail (if present)
-    if (layer.mask) {
-      const maskThumb = this._createThumbnail(layer.mask, 'Mask');
-      thumbnails.appendChild(maskThumb);
-    }
-
-    header.appendChild(thumbnails);
-
-    // Layer details
-    const details = document.createElement('div');
-    details.className = 'p5ml-layer-details';
+    // Dropdown panel (hidden by default, shown when blend indicator is clicked)
+    const dropdown = document.createElement('div');
+    dropdown.className = 'p5ml-layer-dropdown';
+    dropdown.style.display = 'none';
 
     // Opacity control
     const opacityGroup = document.createElement('div');
     opacityGroup.className = 'p5ml-control-group';
 
     const opacityLabel = document.createElement('label');
-    opacityLabel.textContent = 'Opacity';
+    opacityLabel.textContent = 'OPACITY';
 
     const opacityValue = document.createElement('span');
     opacityValue.className = 'p5ml-opacity-value';
@@ -319,6 +338,7 @@ export class LayerUI {
     opacitySlider.value = Math.round(layer.opacity * 100);
     opacitySlider.className = 'p5ml-opacity-slider';
     opacitySlider.addEventListener('input', (e) => {
+      e.stopPropagation();
       const value = parseFloat(e.target.value) / 100;
       this.layerSystem.setOpacity(layer.id, value);
       opacityValue.textContent = e.target.value + '%';
@@ -333,7 +353,7 @@ export class LayerUI {
     blendGroup.className = 'p5ml-control-group';
 
     const blendLabel = document.createElement('label');
-    blendLabel.textContent = 'Blend Mode';
+    blendLabel.textContent = 'BLEND MODE';
 
     const blendSelect = document.createElement('select');
     blendSelect.className = 'p5ml-blend-select';
@@ -341,68 +361,84 @@ export class LayerUI {
     Object.values(BlendModes).forEach(mode => {
       const option = document.createElement('option');
       option.value = mode;
-      option.textContent = mode.charAt(0) + mode.slice(1).toLowerCase();
+      option.textContent = this._formatBlendModeName(mode);
       option.selected = layer.blendMode === mode;
       blendSelect.appendChild(option);
     });
 
     blendSelect.addEventListener('change', (e) => {
+      e.stopPropagation();
       this.layerSystem.setBlendMode(layer.id, e.target.value);
+      blendIndicator.textContent = this._getBlendModeLetter(e.target.value);
+      blendIndicator.title = `Blend Mode: ${e.target.value}`;
     });
 
     blendGroup.appendChild(blendLabel);
     blendGroup.appendChild(blendSelect);
 
-    // Layer info (mask, framebuffer size)
-    const info = document.createElement('div');
-    info.className = 'p5ml-layer-info';
-
-    const infoText = [];
-    if (layer.mask) {
-      infoText.push('<span class="p5ml-badge">🎭 Masked</span>');
-    }
-    infoText.push(`<span class="p5ml-size">${layer.width}×${layer.height}</span>`);
-
-    info.innerHTML = infoText.join(' ');
-
-    // Assemble details
-    details.appendChild(opacityGroup);
-    details.appendChild(blendGroup);
-    details.appendChild(info);
+    dropdown.appendChild(opacityGroup);
+    dropdown.appendChild(blendGroup);
 
     // Assemble layer element
-    layerEl.appendChild(header);
-    layerEl.appendChild(details);
+    layerEl.appendChild(layerRow);
+    layerEl.appendChild(dropdown);
 
     return layerEl;
+  }
+
+  /**
+   * Gets a single letter representing the blend mode
+   * @private
+   */
+  _getBlendModeLetter(blendMode) {
+    const letters = {
+      [BlendModes.NORMAL]: 'N',
+      [BlendModes.MULTIPLY]: 'M',
+      [BlendModes.SCREEN]: 'S',
+      [BlendModes.OVERLAY]: 'O',
+      [BlendModes.DARKEN]: 'D',
+      [BlendModes.LIGHTEN]: 'Li',
+      [BlendModes.COLOR_DODGE]: 'Cd',
+      [BlendModes.COLOR_BURN]: 'B',
+      [BlendModes.HARD_LIGHT]: 'HL',
+      [BlendModes.SOFT_LIGHT]: 'SL',
+      [BlendModes.DIFFERENCE]: 'Di',
+      [BlendModes.EXCLUSION]: 'E',
+      [BlendModes.ADD]: 'A',
+      [BlendModes.SUBTRACT]: 'Su',
+    };
+    return letters[blendMode] || '-';
+  }
+
+  /**
+   * Formats blend mode name for display
+   * @private
+   */
+  _formatBlendModeName(mode) {
+    // Convert BLEND_MODE to "Blend Mode"
+    return mode.split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   /**
    * Creates a thumbnail canvas for a framebuffer or image
    * @private
    */
-  _createThumbnail(source, label) {
+  _createThumbnail() {
     const container = document.createElement('div');
     container.className = 'p5ml-thumbnail';
 
-    const labelEl = document.createElement('div');
-    labelEl.className = 'p5ml-thumbnail-label';
-    labelEl.textContent = label;
-
     const canvas = document.createElement('canvas');
     canvas.className = 'p5ml-thumbnail-canvas';
-    canvas.width = 64;
-    canvas.height = 48;
+    canvas.width = 60;
+    canvas.height = 60;
 
     const ctx = canvas.getContext('2d');
 
     // Draw a checkerboard background for transparency
     this._drawCheckerboard(ctx, canvas.width, canvas.height);
 
-    // Store source reference for later rendering
-    canvas.dataset.sourceType = label;
-
-    container.appendChild(labelEl);
     container.appendChild(canvas);
     return container;
   }
@@ -459,9 +495,9 @@ export class LayerUI {
       }
 
       .p5ml-panel-header {
-        background: rgba(40, 40, 40, 0.8);
-        padding: 10px 12px;
-        border-bottom: 1px solid #444;
+        background: rgba(60, 60, 60, 0.9);
+        padding: 12px 16px;
+        border-bottom: 1px solid #333;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -470,8 +506,9 @@ export class LayerUI {
 
       .p5ml-panel-title {
         font-weight: 600;
-        font-size: 14px;
+        font-size: 16px;
         letter-spacing: 0.5px;
+        color: #ccc;
       }
 
       .p5ml-collapse-btn {
@@ -495,7 +532,8 @@ export class LayerUI {
       .p5ml-layers-container {
         max-height: 500px;
         overflow-y: auto;
-        padding: 8px;
+        padding: 0;
+        background: #2a2a2a;
       }
 
       .p5ml-layers-container::-webkit-scrollbar {
@@ -515,166 +553,179 @@ export class LayerUI {
         background: rgba(255, 255, 255, 0.3);
       }
 
+      /* Procreate-style layer item */
       .p5ml-layer-item {
-        background: rgba(40, 40, 40, 0.6);
-        border: 1px solid #555;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        padding: 8px;
-        transition: background 0.2s;
+        background: transparent;
+        border-bottom: 1px solid #3a3a3a;
+        transition: background 0.15s;
+        cursor: pointer;
       }
 
       .p5ml-layer-item:hover {
-        background: rgba(50, 50, 50, 0.8);
-        border-color: #666;
+        background: rgba(100, 150, 255, 0.15);
       }
 
-      .p5ml-layer-header {
+      /* Main layer row (horizontal layout) */
+      .p5ml-layer-row {
         display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-
-      .p5ml-visibility-checkbox {
-        margin-top: 2px;
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        flex-shrink: 0;
-      }
-
-      .p5ml-thumbnails {
-        display: flex;
-        gap: 8px;
-        margin-left: auto;
-        flex-shrink: 0;
-      }
-
-      .p5ml-thumbnail {
-        display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 2px;
+        gap: 12px;
+        padding: 10px 12px;
       }
 
-      .p5ml-thumbnail-label {
-        font-size: 9px;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+      /* Thumbnail on the left */
+      .p5ml-layer-thumbnail {
+        flex-shrink: 0;
       }
 
-      .p5ml-thumbnail-canvas {
-        border: 1px solid #555;
-        border-radius: 3px;
+      .p5ml-layer-thumbnail canvas {
         display: block;
+        width: 60px;
+        height: 60px;
+        border: 1px solid #555;
+        border-radius: 4px;
         image-rendering: pixelated;
       }
 
+      /* Layer name in center */
       .p5ml-layer-name {
-        font-weight: 500;
         flex: 1;
+        font-weight: 500;
+        font-size: 15px;
+        color: #e8e8e8;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .p5ml-layer-details {
-        padding-left: 24px;
+      /* Right side controls */
+      .p5ml-right-controls {
         display: flex;
-        flex-direction: column;
-        gap: 8px;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      /* Blend mode letter indicator */
+      .p5ml-blend-indicator {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e8e8e8;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .p5ml-blend-indicator:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Visibility checkbox */
+      .p5ml-visibility-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #4a90e2;
+      }
+
+      /* Dropdown panel for opacity and blend mode */
+      .p5ml-layer-dropdown {
+        background: rgba(40, 40, 40, 0.95);
+        border-top: 1px solid #555;
+        padding: 16px;
+        display: none;
       }
 
       .p5ml-control-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+        margin-bottom: 16px;
+      }
+
+      .p5ml-control-group:last-child {
+        margin-bottom: 0;
       }
 
       .p5ml-control-group label {
         font-size: 11px;
         color: #999;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        font-weight: 600;
         display: flex;
         justify-content: space-between;
+        margin-bottom: 8px;
       }
 
       .p5ml-opacity-value {
-        color: #ccc;
-        font-weight: 500;
+        color: #e0e0e0;
+        font-weight: 600;
       }
 
       .p5ml-opacity-slider {
         width: 100%;
-        height: 4px;
-        border-radius: 2px;
+        height: 6px;
+        border-radius: 3px;
         outline: none;
         -webkit-appearance: none;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
+        margin-top: 4px;
       }
 
       .p5ml-opacity-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
         background: #fff;
         cursor: pointer;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
       }
 
       .p5ml-opacity-slider::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
         background: #fff;
         cursor: pointer;
         border: none;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
       }
 
       .p5ml-blend-select {
-        background: rgba(0, 0, 0, 0.3);
+        width: 100%;
+        background: rgba(0, 0, 0, 0.4);
         border: 1px solid #555;
-        border-radius: 4px;
-        color: #e0e0e0;
-        padding: 6px 8px;
-        font-size: 12px;
+        border-radius: 6px;
+        color: #e8e8e8;
+        padding: 10px 12px;
+        font-size: 14px;
         cursor: pointer;
         outline: none;
+        margin-top: 4px;
       }
 
       .p5ml-blend-select:hover {
         border-color: #777;
+        background: rgba(0, 0, 0, 0.5);
       }
 
       .p5ml-blend-select option {
         background: #2a2a2a;
-        color: #e0e0e0;
+        color: #e8e8e8;
+        padding: 8px;
       }
 
-      .p5ml-layer-info {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        font-size: 11px;
-      }
-
-      .p5ml-badge {
-        background: rgba(100, 150, 255, 0.2);
-        border: 1px solid rgba(100, 150, 255, 0.4);
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 11px;
-      }
-
-      .p5ml-size {
-        color: #777;
-        font-family: 'Courier New', monospace;
+      /* Hide old thumbnail styles - no longer used */
+      .p5ml-thumbnail-label {
+        display: none;
       }
     `;
 
