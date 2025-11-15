@@ -1,6 +1,7 @@
 import { Layer } from './Layer.js';
 import { Compositor } from './Compositor.js';
 import { BlendModes } from './constants.js';
+import { LayerUI } from './LayerUI.js';
 
 /**
  * Main layer system manager
@@ -28,6 +29,7 @@ export class LayerSystem {
     this.layerIdCounter = 0;
     this.activeLayerId = null;
     this.compositor = new Compositor(p5Instance);
+    this.ui = null; // LayerUI instance
 
     // Track if we're auto-resizing
     this.autoResize = true;
@@ -252,6 +254,11 @@ export class LayerSystem {
 
     const layers = this.getLayers();
     this.compositor.render(layers, clearCallback);
+
+    // Sync UI state if UI exists
+    if (this.ui) {
+      this.ui.syncState();
+    }
   }
 
   /**
@@ -282,12 +289,43 @@ export class LayerSystem {
   }
 
   /**
+   * Creates and shows a UI panel for controlling layers
+   * @param {Object} options - UI configuration options
+   * @returns {LayerUI} The created UI instance
+   */
+  createUI(options = {}) {
+    // Dispose existing UI if any
+    if (this.ui) {
+      this.ui.dispose();
+    }
+
+    this.ui = new LayerUI(this, options);
+    this.ui.update();
+    return this.ui;
+  }
+
+  /**
+   * Updates the UI if it exists
+   */
+  updateUI() {
+    if (this.ui) {
+      this.ui.update();
+    }
+  }
+
+  /**
    * Disposes of all layers and resources
    */
   dispose() {
     // End active layer if any
     if (this.activeLayerId !== null) {
       this.endLayer();
+    }
+
+    // Dispose UI if exists
+    if (this.ui) {
+      this.ui.dispose();
+      this.ui = null;
     }
 
     // Dispose all layers

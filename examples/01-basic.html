@@ -21,6 +21,9 @@
       bgLayer = layers.createLayer('Background');
       shapeLayer = layers.createLayer('Shapes', { opacity: 0.8 });
       ornamentLayer = layers.createLayer('Ornaments');
+
+      // Create the UI panel to control layers
+      layers.createUI();
     };
 
     window.draw = function() {
@@ -39,12 +42,12 @@
 
       // Draw shapes layer
       layers.beginLayer(shapeLayer);
-      clear();
+      // clear();
 
       // Rotating squares
       push();
       rotateZ(frameCount * 0.01);
-      stroke(255, 200, 100);
+      stroke(255, 200, 100, 10);
       strokeWeight(3);
       noFill();
       for (let i = 0; i < 5; i++) {
@@ -94,12 +97,16 @@
       // Composite all layers to the main canvas
       layers.render();
 
-      // Optional: Toggle visibility with mouse click
-      if (mouseIsPressed) {
-        layers.setVisible(shapeLayer, false);
-      } else {
-        layers.setVisible(shapeLayer, true);
-      }
+      // const mouseInsideCanvas =
+      //   mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height;  
+
+
+      // // Optional: Toggle visibility with mouse click
+      // if (mouseIsPressed && mouseInsideCanvas) {
+      //   layers.setVisible(shapeLayer, false);
+      // } else {
+      //   layers.setVisible(shapeLayer, true);
+      // }
     };
   </script>
   <style>
@@ -128,6 +135,7 @@
 <body>
   <div class="info">
     <p><strong>Click and hold</strong> to hide the shapes layer</p>
+    <p>Use the <strong>Layer Panel</strong> (top right) to control visibility, opacity, and blend modes</p>
   </div>
 </body>
 </html>
