@@ -56,38 +56,22 @@ export class Compositor {
     const p5BlendMode = getP5BlendMode(layer.blendMode, p);
     p.blendMode(p5BlendMode);
 
-    // If layer has a mask, use custom shader
-    if (layer.mask) {
-      this._renderLayerWithMask(layer);
-    } else {
-      // Simple rendering with tint for opacity
-      if (layer.opacity < 1.0) {
-        p.tint(255, 255 * layer.opacity);
-      }
-
-      // Draw the layer's framebuffer as an image
-      // Center it in WebGL coordinate system
-      p.imageMode(p.CENTER);
-      p.image(layer.framebuffer, 0, 0, p.width, p.height);
-
-      if (layer.opacity < 1.0) {
-        p.noTint();
-      }
-    }
+    // Always use the shader for proper framebuffer rendering in WEBGL
+    this._renderLayerWithShader(layer);
 
     // Restore state
     p.pop();
   }
 
   /**
-   * Renders a layer with a mask using the compositor shader
+   * Renders a layer using the compositor shader
    * @param {Layer} layer - The layer to render
    * @private
    */
-  _renderLayerWithMask(layer) {
+  _renderLayerWithShader(layer) {
     const shader = this._ensureShader();
     if (!shader) {
-      console.warn('Compositor shader not available, rendering without mask');
+      console.warn('Compositor shader not available, rendering without shader');
       return;
     }
 
@@ -98,8 +82,8 @@ export class Compositor {
 
     // Set uniforms
     shader.setUniform('layerTexture', layer.framebuffer);
-    shader.setUniform('maskTexture', layer.mask);
-    shader.setUniform('hasMask', true);
+    shader.setUniform('maskTexture', layer.mask || layer.framebuffer);
+    shader.setUniform('hasMask', layer.mask ? true : false);
     shader.setUniform('layerOpacity', layer.opacity);
 
     // Draw a full-screen quad

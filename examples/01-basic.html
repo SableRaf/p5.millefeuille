@@ -6,21 +6,21 @@
   <title>Basic Layer System - p5.millefeuille</title>
   <script src="../lib/p5.2.1.1.js"></script>
   <script type="module">
-    import { createLayerSystem, BlendModes } from '../dist/p5.millefeuille.esm.js';
+    import { createLayerSystem, BlendModes } from '../dist/p5.millefeuille.esm.js?v=20251115171000';
 
     let layers;
-    let bgLayer, shapeLayer, textLayer;
+    let bgLayer, shapeLayer, ornamentLayer;
 
     window.setup = function() {
       createCanvas(800, 600, WEBGL);
 
-      // Create the layer system
-      layers = createLayerSystem(window);
+      // Create the layer system (auto-detects p5 instance in global mode)
+      layers = createLayerSystem();
 
       // Create three layers
       bgLayer = layers.createLayer('Background');
       shapeLayer = layers.createLayer('Shapes', { opacity: 0.8 });
-      textLayer = layers.createLayer('Text');
+      ornamentLayer = layers.createLayer('Ornaments');
     };
 
     window.draw = function() {
@@ -64,18 +64,30 @@
 
       layers.endLayer();
 
-      // Draw text layer
-      layers.beginLayer(textLayer);
+      // Draw ornament layer
+      layers.beginLayer(ornamentLayer);
       clear();
 
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(32);
-      text('p5.millefeuille', 0, -200);
+      // Draw some decorative elements at the top
+      push();
+      translate(0, -200);
 
-      textSize(16);
+      // Title decoration - small circles
+      fill(255, 200);
+      noStroke();
+      for (let i = 0; i < 12; i++) {
+        let angle = (i / 12) * TWO_PI;
+        let x = cos(angle + frameCount * 0.02) * 80;
+        let y = sin(angle + frameCount * 0.02) * 80;
+        circle(x, y, 10);
+      }
+
+      // Center ornament
       fill(200, 200, 255);
-      text('Basic Layer Example', 0, -160);
+      circle(0, 0, 30);
+      fill(255);
+      circle(0, 0, 15);
+      pop();
 
       layers.endLayer();
 

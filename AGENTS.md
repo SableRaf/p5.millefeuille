@@ -62,16 +62,17 @@ Handles the rendering pipeline and shader-based compositing.
 **Key Responsibilities:**
 - Composites all visible layers to the main canvas
 - Applies blend modes using p5.js blend mode constants
-- Handles masked layer rendering via custom shaders
+- Renders all layers via custom shaders to avoid WebGL framebuffer compatibility issues
 - Manages compositor shader lifecycle
 - Preserves and restores WebGL state
 
 **Important Implementation Details:**
 - Lazy shader creation via `_ensureShader()`
-- For non-masked layers: uses `p.tint()` for opacity and `p.texture()` + `p.plane()` for rendering
-- For masked layers: uses custom shader with mask texture uniform
+- All layers are rendered using the compositor shader via `_renderLayerWithShader()`
+- Shader handles both masked and non-masked layers through uniforms
+- Opacity is controlled via `layerOpacity` shader uniform
 - Sorts layers by z-index before rendering (ascending order)
-- Resets shader, blend mode, and tint after each layer
+- Resets shader, blend mode after each layer
 
 #### 4. **Constants** ([src/constants.js](src/constants.js))
 Defines blend modes and default configuration.
@@ -119,8 +120,8 @@ Custom GLSL shaders for advanced compositing.
    ```
    layers.render() → Compositor.render() → Layers sorted by zIndex → For each visible layer:
      - Set blend mode
-     - If masked: Use compositor shader + draw quad
-     - If not masked: Use tint + texture on plane
+     - Use compositor shader with layer texture, mask (if any), and opacity uniforms
+     - Draw full-screen quad with shader
    → Restore state
    ```
 

@@ -13,6 +13,10 @@ export class LayerSystem {
     this.p = p5Instance;
 
     // Validate WebGL mode
+    if (!this.p._renderer || !this.p._renderer.drawingContext) {
+      throw new Error('Canvas not initialized. Make sure createCanvas() is called before createLayerSystem()');
+    }
+
     if (this.p._renderer.drawingContext instanceof WebGLRenderingContext ||
         this.p._renderer.drawingContext instanceof WebGL2RenderingContext) {
       // WebGL mode confirmed
@@ -298,12 +302,27 @@ export class LayerSystem {
 
 /**
  * Factory function to create a new LayerSystem
- * @param {p5} p5Instance - The p5.js instance (optional in instance mode, auto-detected)
+ * @param {p5} p5Instance - The p5.js instance (optional in global mode, auto-detected)
  * @returns {LayerSystem} A new LayerSystem instance
  */
 export function createLayerSystem(p5Instance) {
-  // If no instance provided, try to use global p5 (in global mode)
-  const p = p5Instance || (typeof window !== 'undefined' && window.p5 ? window : null);
+  let p = p5Instance;
+
+  // If no instance provided or window was passed, try to detect global p5
+  if (!p || p === window) {
+    // In global mode, p5 stores the instance in window.p5.instance
+    if (typeof window !== 'undefined' && window.p5 && window.p5.instance) {
+      p = window.p5.instance;
+    } else if (typeof window !== 'undefined' && window._renderer) {
+      // Fallback: p5 is in global mode, use window as the instance
+      p = window;
+    } else if (typeof window !== 'undefined' && typeof window.createCanvas === 'function') {
+      // p5 global mode, but canvas not created yet - use window
+      p = window;
+    } else {
+      throw new Error('p5.js instance not found. Make sure p5.js is loaded and createCanvas() has been called.');
+    }
+  }
 
   if (!p) {
     throw new Error('p5.js instance not found. Pass the p5 instance to createLayerSystem()');

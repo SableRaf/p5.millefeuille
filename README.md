@@ -365,7 +365,7 @@ Requires WebGL support (WebGL 1.0 or 2.0). Works in all modern browsers:
 
 - **LayerSystem**: Manages the layer stack and coordinates rendering
 - **Layer**: Wraps a `p5.Framebuffer` with metadata (opacity, blend mode, etc.)
-- **Compositor**: Handles the rendering pipeline with shader support for masking
+- **Compositor**: Handles the rendering pipeline using custom shaders for all layer compositing
 
 ## Limitations
 

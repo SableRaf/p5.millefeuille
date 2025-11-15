@@ -47,15 +47,21 @@ export class Layer {
    */
   _createFramebuffer() {
     try {
-      return this.p.createFramebuffer({
+      const options = {
         width: this.width,
         height: this.height,
-        density: this.density,
-        depth: this.depth,
-        antialias: this.antialias,
-        channels: this.p.RGBA,
-        format: this.p.UNSIGNED_BYTE
-      });
+        density: this.density
+      };
+
+      // Only add depth and antialias if explicitly set
+      if (this.depth !== undefined) {
+        options.depth = this.depth;
+      }
+      if (this.antialias !== undefined) {
+        options.antialias = this.antialias;
+      }
+
+      return this.p.createFramebuffer(options);
     } catch (e) {
       console.error(`Error creating framebuffer for layer ${this.name}:`, e);
       return null;
