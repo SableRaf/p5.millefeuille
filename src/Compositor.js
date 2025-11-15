@@ -119,7 +119,6 @@ export class Compositor {
     // Reset to default state
     p.resetShader();
     p.blendMode(p.BLEND);
-    p.noTint();
 
     // Sort layers by zIndex (ascending)
     const sortedLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
@@ -131,7 +130,6 @@ export class Compositor {
 
     // Restore state
     p.blendMode(p.BLEND);
-    p.noTint();
     p.resetShader();
     p.pop();
   }
