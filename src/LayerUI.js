@@ -66,6 +66,24 @@ export class LayerUI {
     if (this.options.draggable) {
       this._makeDraggable(header);
     }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      // Check if click is outside the layer panel
+      if (!this.container.contains(e.target)) {
+        this._closeAllDropdowns();
+      }
+    });
+  }
+
+  /**
+   * Closes all open layer dropdowns
+   * @private
+   */
+  _closeAllDropdowns() {
+    document.querySelectorAll('.p5ml-layer-dropdown').forEach(d => {
+      d.style.display = 'none';
+    });
   }
 
   /**
@@ -257,8 +275,12 @@ export class LayerUI {
 
     // Add click handler to update thumbnails on demand
     layerEl.addEventListener('click', (e) => {
-      // Only update if not clicking on interactive controls
-      if (!e.target.matches('input, select, button, .p5ml-blend-indicator')) {
+      // Close all dropdowns when clicking on the layer row itself
+      if (e.target.classList.contains('p5ml-layer-row') ||
+          e.target.classList.contains('p5ml-layer-name') ||
+          e.target.classList.contains('p5ml-layer-thumbnail') ||
+          e.target.classList.contains('p5ml-thumbnail-canvas')) {
+        this._closeAllDropdowns();
         this._updateLayerThumbnail(layer.id);
       }
     });
@@ -293,10 +315,9 @@ export class LayerUI {
       const isExpanded = dropdown.style.display === 'block';
 
       // Close all other dropdowns first
-      document.querySelectorAll('.p5ml-layer-dropdown').forEach(d => {
-        d.style.display = 'none';
-      });
+      this._closeAllDropdowns();
 
+      // Toggle this dropdown (if it wasn't already open)
       dropdown.style.display = isExpanded ? 'none' : 'block';
     });
 
