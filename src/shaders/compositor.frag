@@ -26,7 +26,9 @@ void main() {
     finalOpacity *= maskValue;
   }
 
-  // Apply opacity to the layer color
+  // Apply opacity to the layer color (including RGB channels for proper alpha blending)
+  // This ensures proper pre-multiplied alpha behavior
+  layerColor.rgb *= finalOpacity;
   layerColor.a *= finalOpacity;
 
   gl_FragColor = layerColor;
