@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic Layer System - p5.millefeuille</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.1.1/p5.min.js"></script>
+  <script type="module">
+    import { createLayerSystem, BlendModes } from '../dist/p5.millefeuille.esm.js';
+
+    let layers;
+    let bgLayer, shapeLayer, textLayer;
+
+    window.setup = function() {
+      createCanvas(800, 600, WEBGL);
+
+      // Create the layer system
+      layers = createLayerSystem(window);
+
+      // Create three layers
+      bgLayer = layers.createLayer('Background');
+      shapeLayer = layers.createLayer('Shapes', { opacity: 0.8 });
+      textLayer = layers.createLayer('Text');
+    };
+
+    window.draw = function() {
+      // Draw background layer
+      layers.beginLayer(bgLayer);
+      clear();
+      background(30, 30, 60);
+
+      // Draw a gradient-like effect
+      noStroke();
+      for (let i = 0; i < 20; i++) {
+        fill(30 + i * 5, 30 + i * 3, 60 + i * 8, 20);
+        circle(0, 0, 600 - i * 30);
+      }
+      layers.endLayer();
+
+      // Draw shapes layer
+      layers.beginLayer(shapeLayer);
+      clear();
+
+      // Rotating squares
+      push();
+      rotateZ(frameCount * 0.01);
+      stroke(255, 200, 100);
+      strokeWeight(3);
+      noFill();
+      for (let i = 0; i < 5; i++) {
+        rotateZ(0.2);
+        rect(0, 0, 100 + i * 40, 100 + i * 40);
+      }
+      pop();
+
+      // Moving circles
+      push();
+      let x = cos(frameCount * 0.02) * 150;
+      let y = sin(frameCount * 0.03) * 100;
+      fill(100, 200, 255, 200);
+      noStroke();
+      circle(x, y, 80);
+      pop();
+
+      layers.endLayer();
+
+      // Draw text layer
+      layers.beginLayer(textLayer);
+      clear();
+
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(32);
+      text('p5.millefeuille', 0, -200);
+
+      textSize(16);
+      fill(200, 200, 255);
+      text('Basic Layer Example', 0, -160);
+
+      layers.endLayer();
+
+      // Composite all layers to the main canvas
+      layers.render();
+
+      // Optional: Toggle visibility with mouse click
+      if (mouseIsPressed) {
+        layers.setVisible(shapeLayer, false);
+      } else {
+        layers.setVisible(shapeLayer, true);
+      }
+    };
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: sans-serif;
+      color: #fff;
+      flex-direction: column;
+    }
+    canvas {
+      border: 1px solid #444;
+    }
+    .info {
+      margin-top: 20px;
+      text-align: center;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <p><strong>Click and hold</strong> to hide the shapes layer</p>
+  </div>
+</body>
+</html>

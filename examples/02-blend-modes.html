@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blend Modes - p5.millefeuille</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.1.1/p5.min.js"></script>
+  <script type="module">
+    import { createLayerSystem, BlendModes } from '../dist/p5.millefeuille.esm.js';
+
+    let layers;
+    let baseLayer, effectLayer1, effectLayer2;
+    let currentMode = 0;
+    const modes = [
+      BlendModes.NORMAL,
+      BlendModes.ADD,
+      BlendModes.MULTIPLY,
+      BlendModes.SCREEN,
+      BlendModes.SUBTRACT
+    ];
+
+    window.setup = function() {
+      createCanvas(800, 600, WEBGL);
+
+      layers = createLayerSystem(window);
+
+      // Create layers
+      baseLayer = layers.createLayer('Base');
+      effectLayer1 = layers.createLayer('Effect 1', {
+        blendMode: BlendModes.ADD,
+        opacity: 0.8
+      });
+      effectLayer2 = layers.createLayer('Effect 2', {
+        blendMode: BlendModes.ADD,
+        opacity: 0.6
+      });
+    };
+
+    window.draw = function() {
+      // Base layer - gradient background
+      layers.beginLayer(baseLayer);
+      clear();
+
+      push();
+      noStroke();
+      for (let y = -height/2; y < height/2; y += 5) {
+        let inter = map(y, -height/2, height/2, 0, 1);
+        let c = lerpColor(color(20, 20, 80), color(80, 20, 80), inter);
+        fill(c);
+        rect(-width/2, y, width, 5);
+      }
+      pop();
+
+      layers.endLayer();
+
+      // Effect layer 1 - rotating colorful circles
+      layers.beginLayer(effectLayer1);
+      clear();
+
+      push();
+      rotateZ(frameCount * 0.005);
+      noStroke();
+
+      for (let i = 0; i < 6; i++) {
+        let angle = (TWO_PI / 6) * i;
+        let x = cos(angle) * 150;
+        let y = sin(angle) * 150;
+
+        fill(255, 100, 150, 200);
+        circle(x, y, 120);
+      }
+      pop();
+
+      layers.endLayer();
+
+      // Effect layer 2 - pulsing center orb
+      layers.beginLayer(effectLayer2);
+      clear();
+
+      push();
+      let pulse = sin(frameCount * 0.05) * 30 + 100;
+      noStroke();
+      fill(100, 200, 255, 220);
+      circle(0, 0, pulse);
+
+      // Rings
+      stroke(100, 200, 255, 150);
+      strokeWeight(2);
+      noFill();
+      circle(0, 0, pulse + 40);
+      circle(0, 0, pulse + 80);
+      pop();
+
+      layers.endLayer();
+
+      // Render all layers
+      layers.render();
+
+      // UI overlay (drawn directly to main canvas after layers)
+      push();
+      fill(255);
+      textAlign(LEFT, TOP);
+      textSize(16);
+      text(`Blend Mode: ${modes[currentMode]}`, -width/2 + 20, -height/2 + 20);
+      text('Press SPACE to cycle modes', -width/2 + 20, -height/2 + 45);
+      text('Press 1/2 to adjust effect opacity', -width/2 + 20, -height/2 + 70);
+      pop();
+    };
+
+    window.keyPressed = function() {
+      if (key === ' ') {
+        // Cycle through blend modes
+        currentMode = (currentMode + 1) % modes.length;
+        layers.setBlendMode(effectLayer1, modes[currentMode]);
+        layers.setBlendMode(effectLayer2, modes[currentMode]);
+      }
+
+      if (key === '1') {
+        // Increase effect layer 1 opacity
+        let layer = layers.getLayer(effectLayer1);
+        layers.setOpacity(effectLayer1, Math.min(1, layer.opacity + 0.1));
+      }
+
+      if (key === '2') {
+        // Decrease effect layer 1 opacity
+        let layer = layers.getLayer(effectLayer1);
+        layers.setOpacity(effectLayer1, Math.max(0, layer.opacity - 0.1));
+      }
+    };
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: sans-serif;
+      color: #fff;
+      flex-direction: column;
+    }
+    canvas {
+      border: 1px solid #444;
+    }
+    .info {
+      margin-top: 20px;
+      text-align: center;
+      color: #aaa;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <p>This example demonstrates different blend modes available in p5.millefeuille.</p>
+    <p><strong>SPACE</strong>: Cycle blend modes | <strong>1/2</strong>: Adjust opacity</p>
+  </div>
+</body>
+</html>
