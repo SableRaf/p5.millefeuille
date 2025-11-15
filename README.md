@@ -316,6 +316,42 @@ Disposes of all layers and resources. Call when done with the layer system.
 
 ---
 
+#### `createUI(options)`
+
+Creates an interactive UI panel for controlling layers.
+
+**Parameters:**
+- `options` (object, optional) - UI configuration
+  - `position` (string) - Panel position: 'top-right' (default), 'top-left', 'bottom-right', 'bottom-left'
+  - `width` (number) - Panel width in pixels (default: 280)
+  - `collapsible` (boolean) - Allow collapsing the panel (default: true)
+  - `draggable` (boolean) - Allow dragging the panel (default: true)
+
+**Returns:** `LayerUI` instance
+
+**Example:**
+```javascript
+// Basic UI
+layers.createUI();
+
+// Custom UI
+layers.createUI({
+  position: 'top-left',
+  width: 320
+});
+```
+
+**UI Features:**
+- **Layer thumbnails**: Visual previews of each layer's content
+- **Click to update**: Click any layer to refresh its thumbnail (thumbnails only update on click to maintain performance)
+- **Visibility toggle**: Show/hide layers with checkbox
+- **Opacity control**: Adjust layer opacity with slider
+- **Blend mode selector**: Change layer blend modes
+- **Collapsible**: Minimize the panel when not in use
+- **Draggable**: Reposition the panel anywhere on screen
+
+---
+
 ## Blend Modes
 
 Available blend modes in `BlendModes`:

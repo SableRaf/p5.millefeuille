@@ -142,7 +142,7 @@ export class LayerUI {
       this.layerElements.set(layer.id, layerEl);
     });
 
-    // Update thumbnails with current content
+    // Initial thumbnail render
     this._updateThumbnails();
   }
 
@@ -178,8 +178,69 @@ export class LayerUI {
       }
     });
 
-    // Update thumbnails
-    this._updateThumbnails();
+    // Thumbnails are only updated when clicked (not automatically)
+  }
+
+  /**
+   * Updates all thumbnails
+   * @private
+   */
+  _updateThumbnails() {
+    const layers = this.layerSystem.getLayers();
+    layers.forEach(layer => {
+      this._updateLayerThumbnail(layer.id);
+    });
+  }
+
+  /**
+   * Updates thumbnails for a specific layer
+   * @private
+   */
+  _updateLayerThumbnail(layerId) {
+    const layer = this.layerSystem.getLayers().find(l => l.id === layerId);
+    if (!layer) return;
+
+    const layerEl = this.layerElements.get(layerId);
+    if (!layerEl) return;
+
+    const thumbnails = layerEl.querySelectorAll('.p5ml-thumbnail-canvas');
+
+    thumbnails.forEach(canvas => {
+      const sourceType = canvas.dataset.sourceType;
+      const ctx = canvas.getContext('2d');
+      const source = sourceType === 'Framebuffer' ? layer.framebuffer : layer.mask;
+
+      if (!source) return;
+
+      try {
+        // Clear and redraw checkerboard
+        this._drawCheckerboard(ctx, canvas.width, canvas.height);
+
+        // Get framebuffer content as a p5.Image using the get() method
+        let imageData;
+
+        if (typeof source.get === 'function') {
+          imageData = source.get();
+        } else if (source.canvas) {
+          imageData = source;
+        }
+
+        if (imageData && imageData.canvas) {
+          const sourceCanvas = imageData.canvas;
+
+          // Calculate aspect-fit scaling
+          const scale = Math.min(canvas.width / sourceCanvas.width, canvas.height / sourceCanvas.height);
+          const scaledWidth = sourceCanvas.width * scale;
+          const scaledHeight = sourceCanvas.height * scale;
+          const x = (canvas.width - scaledWidth) / 2;
+          const y = (canvas.height - scaledHeight) / 2;
+
+          ctx.drawImage(sourceCanvas, x, y, scaledWidth, scaledHeight);
+        }
+      } catch (e) {
+        console.debug('Could not render thumbnail:', e);
+      }
+    });
   }
 
   /**
@@ -190,6 +251,14 @@ export class LayerUI {
     const layerEl = document.createElement('div');
     layerEl.className = 'p5ml-layer-item';
     layerEl.dataset.layerId = layer.id;
+
+    // Add click handler to update thumbnails on demand
+    layerEl.addEventListener('click', (e) => {
+      // Only update if not clicking on interactive controls
+      if (!e.target.matches('input, select, button')) {
+        this._updateLayerThumbnail(layer.id);
+      }
+    });
 
     // Layer header with visibility toggle and name
     const header = document.createElement('div');
@@ -338,50 +407,6 @@ export class LayerUI {
     return container;
   }
 
-  /**
-   * Updates thumbnail canvases with current framebuffer/mask content
-   * @private
-   */
-  _updateThumbnails() {
-    const layers = this.layerSystem.getLayers();
-
-    layers.forEach(layer => {
-      const layerEl = this.layerElements.get(layer.id);
-      if (!layerEl) return;
-
-      const thumbnails = layerEl.querySelectorAll('.p5ml-thumbnail-canvas');
-
-      thumbnails.forEach(canvas => {
-        const sourceType = canvas.dataset.sourceType;
-        const ctx = canvas.getContext('2d');
-        const source = sourceType === 'Framebuffer' ? layer.framebuffer : layer.mask;
-
-        if (!source) return;
-
-        try {
-          // Clear and redraw checkerboard
-          this._drawCheckerboard(ctx, canvas.width, canvas.height);
-
-          // Get the WebGL texture data via p5's pixels approach
-          // Use the framebuffer's internal canvas/color property
-          if (source.color && source.color.canvas) {
-            const fbCanvas = source.color.canvas;
-
-            // Calculate aspect-fit scaling
-            const scale = Math.min(canvas.width / fbCanvas.width, canvas.height / fbCanvas.height);
-            const scaledWidth = fbCanvas.width * scale;
-            const scaledHeight = fbCanvas.height * scale;
-            const x = (canvas.width - scaledWidth) / 2;
-            const y = (canvas.height - scaledHeight) / 2;
-
-            ctx.drawImage(fbCanvas, x, y, scaledWidth, scaledHeight);
-          }
-        } catch (e) {
-          // Silently fail - just show checkerboard
-        }
-      });
-    });
-  }
 
   /**
    * Draws a checkerboard pattern for transparency background
