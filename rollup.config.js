@@ -24,7 +24,7 @@ const banner = `/**
  * A Photoshop-like layer system for p5.js WebGL
  * https://github.com/yourusername/p5.millefeuille
  *
- * Licensed under MIT
+ * Licensed under LGPL-2.1
  */`;
 
 export default [

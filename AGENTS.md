@@ -381,5 +381,5 @@ When making changes:
 ## Version Information
 
 - **Current Version:** 0.1.0
-- **License:** MIT
+- **License:** LGPL-2.1
 - **Peer Dependency:** p5.js ^2.1.1

@@ -416,7 +416,7 @@ Contributions welcome! Please open an issue or PR on [GitHub](https://github.com
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+LGPL-2.1 License - see [LICENSE](LICENSE) file for details
 
 ## Credits
 

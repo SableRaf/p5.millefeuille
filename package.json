@@ -24,7 +24,7 @@
     "creative-coding"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "LGPL-2.1",
   "peerDependencies": {
     "p5": "^2.1.1"
   },
