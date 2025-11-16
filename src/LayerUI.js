@@ -21,12 +21,7 @@ export class LayerUI {
     this.isCollapsed = false;
     this.container = null;
     this.layerElements = new Map(); // layerId -> DOM element
-
-    // Drag and drop state
-    this.draggedLayer = null;
-    this.draggedElement = null;
-    this.dragEnterTimeout = null;
-    this.lastDragTarget = null;
+    this.selectedLayerId = null; // Currently selected layer
 
     this._createUI();
     this._attachStyles();
@@ -47,7 +42,11 @@ export class LayerUI {
     header.className = 'p5ml-panel-header';
     header.innerHTML = `
       <span class="p5ml-panel-title">Layers</span>
-      ${this.options.collapsible ? '<button class="p5ml-collapse-btn">−</button>' : ''}
+      <div class="p5ml-header-controls">
+        <button class="p5ml-arrow-btn p5ml-arrow-up" title="Move layer up">↑</button>
+        <button class="p5ml-arrow-btn p5ml-arrow-down" title="Move layer down">↓</button>
+        ${this.options.collapsible ? '<button class="p5ml-collapse-btn">−</button>' : ''}
+      </div>
     `;
     this.container.appendChild(header);
 
@@ -68,16 +67,41 @@ export class LayerUI {
       collapseBtn.addEventListener('click', () => this.toggle());
     }
 
+    // Arrow button handlers
+    const upBtn = header.querySelector('.p5ml-arrow-up');
+    const downBtn = header.querySelector('.p5ml-arrow-down');
+    upBtn.addEventListener('click', () => this._moveSelectedLayer(-1));
+    downBtn.addEventListener('click', () => this._moveSelectedLayer(1));
+
     // Make draggable if enabled
     if (this.options.draggable) {
       this._makeDraggable(header);
     }
 
-    // Close dropdowns when clicking outside
+    // Close dropdowns and deselect when clicking outside
     document.addEventListener('click', (e) => {
       // Check if click is outside the layer panel
       if (!this.container.contains(e.target)) {
         this._closeAllDropdowns();
+        this._deselectLayer();
+      }
+    });
+
+    // Keyboard navigation for arrow keys
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        // Don't interfere if user is typing in an input field
+        if (e.target.matches('input, select, textarea')) {
+          return;
+        }
+
+        e.preventDefault();
+
+        if (e.key === 'ArrowUp') {
+          this._moveSelectedLayer(-1);
+        } else if (e.key === 'ArrowDown') {
+          this._moveSelectedLayer(1);
+        }
       }
     });
   }
@@ -278,9 +302,8 @@ export class LayerUI {
     const layerEl = document.createElement('div');
     layerEl.className = 'p5ml-layer-item';
     layerEl.dataset.layerId = layer.id;
-    layerEl.draggable = true;
 
-    // Add click handler to update thumbnails on demand
+    // Add click handler to select layer and update thumbnail
     layerEl.addEventListener('click', (e) => {
       // Close all dropdowns when clicking on the layer row itself
       if (e.target.classList.contains('p5ml-layer-row') ||
@@ -288,17 +311,10 @@ export class LayerUI {
           e.target.classList.contains('p5ml-layer-thumbnail') ||
           e.target.classList.contains('p5ml-thumbnail-canvas')) {
         this._closeAllDropdowns();
+        this._selectLayer(layer.id);
         this._updateLayerThumbnail(layer.id);
       }
     });
-
-    // Drag and drop handlers
-    layerEl.addEventListener('dragstart', (e) => this._handleDragStart(e, layer));
-    layerEl.addEventListener('dragend', (e) => this._handleDragEnd(e));
-    layerEl.addEventListener('dragover', (e) => this._handleDragOver(e));
-    layerEl.addEventListener('drop', (e) => this._handleDrop(e, layer));
-    layerEl.addEventListener('dragenter', (e) => this._handleDragEnter(e));
-    layerEl.addEventListener('dragleave', (e) => this._handleDragLeave(e));
 
     // Main layer row (Procreate style: thumbnail | name | blend letter | checkbox)
     const layerRow = document.createElement('div');
@@ -500,178 +516,71 @@ export class LayerUI {
   }
 
   /**
-   * Handles the start of a drag operation
+   * Selects a layer
    * @private
    */
-  _handleDragStart(e, layer) {
-    // Don't allow dragging if clicking on controls
-    if (e.target.matches('input, select, button, .p5ml-blend-indicator')) {
-      e.preventDefault();
-      return;
-    }
+  _selectLayer(layerId) {
+    this.selectedLayerId = layerId;
 
-    this.draggedLayer = layer;
-    this.draggedElement = e.currentTarget;
-
-    // Add dragging state with a slight delay for smooth animation
-    requestAnimationFrame(() => {
-      e.currentTarget.classList.add('p5ml-dragging');
-    });
-
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
-
-    // Close all dropdowns when starting drag
-    this._closeAllDropdowns();
-  }
-
-  /**
-   * Handles the end of a drag operation
-   * @private
-   */
-  _handleDragEnd(e) {
-    // Clear any pending timeout
-    if (this.dragEnterTimeout) {
-      clearTimeout(this.dragEnterTimeout);
-      this.dragEnterTimeout = null;
-    }
-
-    // Remove dragging state - element will animate back to normal
-    e.currentTarget.classList.remove('p5ml-dragging');
-
-    // Remove all drag-over indicators and placeholders
+    // Update visual selection state
     document.querySelectorAll('.p5ml-layer-item').forEach(el => {
-      el.classList.remove('p5ml-drag-over-before', 'p5ml-drag-over-after', 'p5ml-drag-placeholder');
-    });
-
-    this.draggedLayer = null;
-    this.draggedElement = null;
-    this.lastDragTarget = null;
-  }
-
-  /**
-   * Handles drag over event
-   * @private
-   */
-  _handleDragOver(e) {
-    if (e.preventDefault) {
-      e.preventDefault();
-    }
-    e.dataTransfer.dropEffect = 'move';
-    return false;
-  }
-
-  /**
-   * Handles drag enter event
-   * @private
-   */
-  _handleDragEnter(e) {
-    const target = e.currentTarget;
-
-    if (target === this.draggedElement) {
-      return;
-    }
-
-    // Skip if we're re-entering the same target
-    if (this.lastDragTarget === target) {
-      return;
-    }
-
-    // Clear any pending timeout
-    if (this.dragEnterTimeout) {
-      clearTimeout(this.dragEnterTimeout);
-    }
-
-    // Debounce the drag enter animation
-    this.dragEnterTimeout = setTimeout(() => {
-      // Remove previous indicators
-      document.querySelectorAll('.p5ml-layer-item').forEach(el => {
-        if (el !== this.draggedElement) {
-          el.classList.remove('p5ml-drag-over-before', 'p5ml-drag-over-after');
-        }
-      });
-
-      // Determine if we're dragging up or down based on indices
-      const draggedIndex = Array.from(this.layersContainer.children).indexOf(this.draggedElement);
-      const targetIndex = Array.from(this.layersContainer.children).indexOf(target);
-
-      if (targetIndex < draggedIndex) {
-        // Dragging upward - add space above target
-        target.classList.add('p5ml-drag-over-before');
+      if (el.dataset.layerId === layerId) {
+        el.classList.add('p5ml-selected');
       } else {
-        // Dragging downward - add space below target
-        target.classList.add('p5ml-drag-over-after');
+        el.classList.remove('p5ml-selected');
       }
-
-      this.lastDragTarget = target;
-    }, 50); // 50ms debounce
-  }
-
-  /**
-   * Handles drag leave event
-   * @private
-   */
-  _handleDragLeave(e) {
-    // Only remove if we're actually leaving the element (not entering a child)
-    const target = e.currentTarget;
-    const relatedTarget = e.relatedTarget;
-
-    if (!target.contains(relatedTarget)) {
-      target.classList.remove('p5ml-drag-over-before', 'p5ml-drag-over-after');
-    }
-  }
-
-  /**
-   * Handles drop event
-   * @private
-   */
-  _handleDrop(e, targetLayer) {
-    if (e.stopPropagation) {
-      e.stopPropagation();
-    }
-    if (e.preventDefault) {
-      e.preventDefault();
-    }
-
-    // Clean up all drag indicators
-    document.querySelectorAll('.p5ml-layer-item').forEach(el => {
-      el.classList.remove('p5ml-drag-over-before', 'p5ml-drag-over-after', 'p5ml-drag-placeholder');
     });
-
-    if (this.draggedLayer && this.draggedLayer.id !== targetLayer.id) {
-      // Reorder layers in the layer system
-      this._reorderLayers(this.draggedLayer.id, targetLayer.id);
-    }
-
-    return false;
   }
 
   /**
-   * Reorders layers in the layer system
+   * Deselects the currently selected layer
    * @private
    */
-  _reorderLayers(draggedLayerId, targetLayerId) {
+  _deselectLayer() {
+    this.selectedLayerId = null;
+
+    // Remove visual selection state from all layers
+    document.querySelectorAll('.p5ml-layer-item').forEach(el => {
+      el.classList.remove('p5ml-selected');
+    });
+  }
+
+  /**
+   * Moves the selected layer up or down in the stack
+   * @private
+   * @param {number} direction - -1 for up (higher in stack), 1 for down (lower in stack)
+   */
+  _moveSelectedLayer(direction) {
+    if (!this.selectedLayerId) return;
+
     const layers = this.layerSystem.getLayers();
-    const draggedIndex = layers.findIndex(l => l.id === draggedLayerId);
-    const targetIndex = layers.findIndex(l => l.id === targetLayerId);
+    const currentIndex = layers.findIndex(l => l.id === this.selectedLayerId);
 
-    if (draggedIndex === -1 || targetIndex === -1) return;
+    if (currentIndex === -1) return;
 
-    // Remove dragged layer from its position
-    const [draggedLayer] = layers.splice(draggedIndex, 1);
+    // Calculate new index (remember layers are in bottom-to-top order)
+    // direction -1 means "up" which is higher index
+    // direction 1 means "down" which is lower index
+    const newIndex = currentIndex - direction;
 
-    // Insert at new position
-    layers.splice(targetIndex, 0, draggedLayer);
+    // Check bounds
+    if (newIndex < 0 || newIndex >= layers.length) return;
+
+    // Swap layers
+    const temp = layers[currentIndex];
+    layers[currentIndex] = layers[newIndex];
+    layers[newIndex] = temp;
 
     // Update the layer system's internal order
-    // Note: This assumes the layer system has a method to set layer order
-    // If not available, we may need to adjust this approach
     if (typeof this.layerSystem.reorderLayers === 'function') {
       this.layerSystem.reorderLayers(layers);
     }
 
     // Refresh the UI to reflect new order
     this.update();
+
+    // Re-select the layer after update
+    this._selectLayer(this.selectedLayerId);
   }
 
   /**
@@ -722,6 +631,37 @@ export class LayerUI {
         color: #ccc;
       }
 
+      .p5ml-header-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .p5ml-arrow-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        color: #e8e8e8;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px 8px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+      }
+
+      .p5ml-arrow-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .p5ml-arrow-btn:active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
       .p5ml-collapse-btn {
         background: none;
         border: none;
@@ -768,50 +708,26 @@ export class LayerUI {
       .p5ml-layer-item {
         background: transparent;
         border-bottom: 1px solid #3a3a3a;
-        transition:
-          background 0.15s ease,
-          opacity 0.2s ease,
-          transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-          margin 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: grab;
-        transform-origin: center;
+        transition: background 0.15s ease;
+        cursor: pointer;
       }
 
       .p5ml-layer-item:hover {
         background: rgba(100, 150, 255, 0.15);
       }
 
-      .p5ml-layer-item:active {
-        cursor: grabbing;
+      /* Selected state */
+      .p5ml-layer-item.p5ml-selected {
+        background: rgba(74, 144, 226, 0.35);
+        border-left: 3px solid #4a90e2;
       }
 
-      /* Dragging state - shrink and fade */
-      .p5ml-layer-item.p5ml-dragging {
-        opacity: 0.5;
-        transform: scale(0.95);
-        cursor: grabbing;
-        background: rgba(100, 150, 255, 0.08);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      .p5ml-layer-item.p5ml-selected:hover {
+        background: rgba(74, 144, 226, 0.4);
       }
 
-      /* Placeholder for dragged item - creates space */
-      .p5ml-layer-item.p5ml-drag-placeholder {
-        opacity: 0.3;
-        transform: scale(0.98);
-        background: rgba(74, 144, 226, 0.05);
-      }
-
-      /* Drag over indicator - shows where item will drop */
-      .p5ml-layer-item.p5ml-drag-over-before {
-        transform: translateY(2px);
-        margin-top: 40px;
-        border-top: 2px solid #4a90e2;
-      }
-
-      .p5ml-layer-item.p5ml-drag-over-after {
-        transform: translateY(-2px);
-        margin-bottom: 40px;
-        border-bottom: 2px solid #4a90e2;
+      .p5ml-layer-item.p5ml-selected .p5ml-layer-row {
+        background: transparent;
       }
 
       /* Main layer row (horizontal layout) */
