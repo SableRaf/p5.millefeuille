@@ -24,9 +24,17 @@ module.exports = {
       templateContent: ({ htmlWebpackPlugin }) => {
         // Read the template file
         const template = fs.readFileSync('./examples/01-basic.html', 'utf-8');
+
+        // Read the build timestamp script
+        const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
+
         // Replace the paths - both dist and lib go to ./lib/
-        return template
-          .replace(/\.\.\/(dist|lib)\//g, './lib/');
+        let html = template.replace(/\.\.\/(dist|lib)\//g, './lib/');
+
+        // Inject the timestamp script before the closing </head> tag
+        html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
+
+        return html;
       },
     }),
     new CopyWebpackPlugin({
