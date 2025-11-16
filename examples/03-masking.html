@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layer Masking - p5.millefeuille</title>
+  <script src="../lib/p5.2.1.1.js"></script>
+  <script type="module">
+    import { createLayerSystem, BlendModes } from '../dist/p5.millefeuille.esm.js?v=20251115171000';
+
+    let layers;
+    let bgLayer, contentLayer, overlayLayer;
+    let maskBuffer;
+
+    window.setup = function() {
+      createCanvas(800, 600, WEBGL);
+
+      layers = createLayerSystem();
+
+      // Create layers
+      bgLayer = layers.createLayer('Background');
+      contentLayer = layers.createLayer('Content');
+      overlayLayer = layers.createLayer('Overlay', {
+        blendMode: BlendModes.ADD,
+        opacity: 0.7
+      });
+
+      // Create a framebuffer to use as a mask
+      maskBuffer = createFramebuffer({
+        width: width,
+        height: height,
+        density: pixelDensity()
+      });
+
+      // Apply mask to content layer
+      layers.setMask(contentLayer, maskBuffer);
+    };
+
+    window.draw = function() {
+      // Update the mask with moving spotlight effect
+      maskBuffer.begin();
+      clear();
+      background(0); // Black = fully transparent
+
+      // Create a radial gradient mask that follows the mouse
+      push();
+      translate(-width/2, -height/2); // maskBuffer uses corner origin
+      let mx = mouseX;
+      let my = mouseY;
+
+      // Draw radial gradient
+      noStroke();
+      for (let r = 200; r > 0; r -= 5) {
+        let alpha = map(r, 0, 200, 255, 0);
+        fill(255, alpha);
+        circle(mx, my, r);
+      }
+
+      // Add a secondary light source that moves automatically
+      let autoX = width/2 + cos(frameCount * 0.02) * 200;
+      let autoY = height/2 + sin(frameCount * 0.03) * 150;
+      for (let r = 150; r > 0; r -= 5) {
+        let alpha = map(r, 0, 150, 200, 0);
+        fill(255, alpha);
+        circle(autoX, autoY, r);
+      }
+      pop();
+      maskBuffer.end();
+
+      // Draw background layer
+      layers.beginLayer(bgLayer);
+      clear();
+      background(10, 10, 30);
+
+      // Starfield effect
+      push();
+      randomSeed(0);
+      noStroke();
+      fill(255, 255, 200);
+      for (let i = 0; i < 100; i++) {
+        let x = random(-width/2, width/2);
+        let y = random(-height/2, height/2);
+        let size = random(1, 3);
+        circle(x, y, size);
+      }
+      pop();
+      layers.endLayer();
+
+      // Draw content layer (will be masked)
+      layers.beginLayer(contentLayer);
+      clear();
+
+      // Colorful animated content
+      push();
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 6; j++) {
+          let x = map(i, 0, 7, -width/2 + 50, width/2 - 50);
+          let y = map(j, 0, 5, -height/2 + 50, height/2 - 50);
+
+          let hue = (i * 30 + j * 20 + frameCount) % 360;
+          colorMode(HSB);
+          fill(hue, 80, 90);
+          noStroke();
+
+          push();
+          translate(x, y);
+          rotateZ(frameCount * 0.01 + i * 0.5);
+          rect(0, 0, 60, 60);
+          pop();
+        }
+      }
+      colorMode(RGB);
+      pop();
+      layers.endLayer();
+
+      // Draw overlay layer
+      layers.beginLayer(overlayLayer);
+      clear();
+
+      // Glowing rings
+      push();
+      noFill();
+      strokeWeight(3);
+      stroke(100, 200, 255, 100);
+      for (let i = 1; i <= 5; i++) {
+        let size = sin(frameCount * 0.05 + i * 0.5) * 50 + 100 + i * 80;
+        circle(0, 0, size);
+      }
+      pop();
+      layers.endLayer();
+
+      // Render all layers
+      layers.render();
+
+      // UI overlay
+      push();
+      fill(255);
+      textAlign(LEFT, TOP);
+      textSize(16);
+      text('Layer Masking Example', -width/2 + 20, -height/2 + 20);
+      text('Move mouse to reveal content', -width/2 + 20, -height/2 + 45);
+      text('The colorful grid is masked by spotlight effect', -width/2 + 20, -height/2 + 70);
+      pop();
+    };
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: sans-serif;
+      color: #fff;
+      flex-direction: column;
+    }
+    canvas {
+      border: 1px solid #444;
+      cursor: none;
+    }
+    .info {
+      margin-top: 20px;
+      text-align: center;
+      color: #aaa;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <p>This example demonstrates layer masking using a framebuffer as a mask.</p>
+    <p>The colorful grid is only visible where the spotlight reveals it.</p>
+  </div>
+</body>
+</html>
