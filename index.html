@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Basic Layer System - p5.millefeuille</title>
-  <script src="./lib/p5.2.1.1.js"></script>
-  <script type="module">
-    import { createLayerSystem, BlendModes } from './dist/p5.millefeuille.esm.js?v=20251115171000';
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Basic Layer System - p5.millefeuille</title><script src="./lib/p5.2.1.1.js"></script><script type="module">import { createLayerSystem, BlendModes } from './dist/p5.millefeuille.esm.js?v=20251115171000';
 
     let layers;
     let bgLayer, shapeLayer, ornamentLayer;
@@ -96,10 +88,7 @@
 
       // Composite all layers to the main canvas
       layers.render();
-    };
-  </script>
-  <style>
-    body {
+    };</script><style>body {
       margin: 0;
       padding: 20px;
       display: flex;
@@ -118,12 +107,4 @@
       margin-top: 20px;
       text-align: center;
       color: #aaa;
-    }
-  </style>
-</head>
-<body>
-  <div class="info">
-    <p>Use the <strong>Layer Panel</strong> to control visibility, opacity, and blend modes</p>
-  </div>
-</body>
-</html>
+    }</style></head><body><div class="info"><p>Use the <strong>Layer Panel</strong> to control visibility, opacity, and blend modes</p></div></body></html>
