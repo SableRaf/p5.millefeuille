@@ -1,0 +1,1 @@
+-[] Prevent drag event on slider from closing expanded layer options dropdown
