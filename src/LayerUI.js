@@ -522,12 +522,24 @@ export class LayerUI {
   _selectLayer(layerId) {
     this.selectedLayerId = layerId;
 
+    // Debug: Log selected layer info
+    const layer = this.layerSystem.getLayers().find(l => l.id === layerId);
+
     // Update visual selection state
-    document.querySelectorAll('.p5ml-layer-item').forEach(el => {
-      if (el.dataset.layerId === layerId) {
+    const elements = document.querySelectorAll('.p5ml-layer-item');
+
+    elements.forEach(el => {
+      // Convert both to strings for comparison (dataset values are always strings)
+      if (el.dataset.layerId == layerId) {
         el.classList.add('p5ml-selected');
+        // Force bright blue background with inline style
+        el.style.background = '#3a7bc8';
+        el.style.borderLeft = '3px solid #5dade2';
       } else {
         el.classList.remove('p5ml-selected');
+        // Remove inline styles
+        el.style.background = '';
+        el.style.borderLeft = '';
       }
     });
   }
@@ -542,6 +554,9 @@ export class LayerUI {
     // Remove visual selection state from all layers
     document.querySelectorAll('.p5ml-layer-item').forEach(el => {
       el.classList.remove('p5ml-selected');
+      // Remove inline styles
+      el.style.background = '';
+      el.style.borderLeft = '';
     });
   }
 
@@ -551,7 +566,7 @@ export class LayerUI {
    * @param {number} direction - -1 for up (higher in stack), 1 for down (lower in stack)
    */
   _moveSelectedLayer(direction) {
-    if (!this.selectedLayerId) return;
+    if (this.selectedLayerId === null) return;
 
     const layers = this.layerSystem.getLayers();
     const currentIndex = layers.findIndex(l => l.id === this.selectedLayerId);
@@ -718,12 +733,12 @@ export class LayerUI {
 
       /* Selected state */
       .p5ml-layer-item.p5ml-selected {
-        background: rgba(74, 144, 226, 0.35);
-        border-left: 3px solid #4a90e2;
+        background: #3a7bc8 !important;
+        border-left: 3px solid #5dade2;
       }
 
       .p5ml-layer-item.p5ml-selected:hover {
-        background: rgba(74, 144, 226, 0.4);
+        background: #4a8dd8 !important;
       }
 
       .p5ml-layer-item.p5ml-selected .p5ml-layer-row {
