@@ -216,6 +216,22 @@ export class LayerSystem {
   }
 
   /**
+   * Reorders layers to match a new array order
+   * @param {Layer[]} orderedLayers - Array of layers in the desired order
+   */
+  reorderLayers(orderedLayers) {
+    // Update zIndex for each layer based on its position in the array
+    orderedLayers.forEach((layer, index) => {
+      layer.setZIndex(index);
+    });
+
+    // Update UI if it exists
+    if (this.ui) {
+      this.ui.update();
+    }
+  }
+
+  /**
    * Attaches a mask to a layer
    * @param {number} layerId - The layer ID
    * @param {p5.Framebuffer|p5.Image} maskSource - The mask to apply
