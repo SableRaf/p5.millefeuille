@@ -10,7 +10,9 @@
     "dev": "rollup -c -w",
     "test": "jest",
     "lint": "eslint src/**/*.js",
-    "examples": "lsof -ti:8000 | xargs kill -9 2>/dev/null || true && npx http-server . -p 8000 -o /examples/"
+    "examples": "lsof -ti:8000 | xargs kill -9 2>/dev/null || true && npx http-server . -p 8000 -o /examples/",
+    "predeploy": "npm run build && webpack --config webpack.deploy.js",
+    "deploy": "gh-pages -d .gh-pages"
   },
   "keywords": [
     "p5js",
@@ -29,9 +31,16 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "copy-webpack-plugin": "^13.0.1",
     "eslint": "^8.57.0",
+    "gh-pages": "^6.3.0",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.4",
     "jest": "^29.7.0",
-    "rollup": "^4.9.6"
+    "rollup": "^4.9.6",
+    "string-replace-loader": "^3.2.0",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1"
   },
   "repository": {
     "type": "git",

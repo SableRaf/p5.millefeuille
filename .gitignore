@@ -23,3 +23,6 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+.gh-pages/
+.webpack-dummy.js
+.playwright-mcp/
