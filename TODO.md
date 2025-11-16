@@ -1,0 +1,1 @@
+-[] Include blend modes from https://github.com/jamieowen/glsl-blend/ (look at issues #3 Add Hue, Luminance, Saturation & Color Modes, #6 Blend Normal with Alpha, #12 Subtract mode error)
