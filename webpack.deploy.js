@@ -17,23 +17,34 @@ module.exports = {
     new webpack.DefinePlugin({
       __BUILD_TIMESTAMP__: Date.now(),
     }),
+    // Main examples index page
     new HtmlWebpackPlugin({
-      template: './examples/01-basic.html',
+      template: './examples/index.html',
       filename: 'index.html',
       inject: false,
+    }),
+    // Individual example pages
+    new HtmlWebpackPlugin({
+      template: './examples/01-basic/index.html',
+      filename: '01-basic/index.html',
+      inject: false,
       templateContent: ({ htmlWebpackPlugin }) => {
-        // Read the template file
-        const template = fs.readFileSync('./examples/01-basic.html', 'utf-8');
-
-        // Read the build timestamp script
+        const template = fs.readFileSync('./examples/01-basic/index.html', 'utf-8');
         const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
-
-        // Replace the paths - both dist and lib go to ./lib/
-        let html = template.replace(/\.\.\/(dist|lib)\//g, './lib/');
-
-        // Inject the timestamp script before the closing </head> tag
+        let html = template.replace(/\.\.\/(dist|lib)\//g, '../lib/');
         html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
-
+        return html;
+      },
+    }),
+    new HtmlWebpackPlugin({
+      template: './examples/02-blend-modes/index.html',
+      filename: '02-blend-modes/index.html',
+      inject: false,
+      templateContent: ({ htmlWebpackPlugin }) => {
+        const template = fs.readFileSync('./examples/02-blend-modes/index.html', 'utf-8');
+        const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
+        let html = template.replace(/\.\.\/(dist|lib)\//g, '../lib/');
+        html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
         return html;
       },
     }),
@@ -46,6 +57,24 @@ module.exports = {
         {
           from: 'dist',
           to: 'lib',
+        },
+        {
+          from: 'examples/index-styles.css',
+          to: 'index-styles.css',
+        },
+        {
+          from: 'examples/01-basic',
+          to: '01-basic',
+          globOptions: {
+            ignore: ['**/index.html'],
+          },
+        },
+        {
+          from: 'examples/02-blend-modes',
+          to: '02-blend-modes',
+          globOptions: {
+            ignore: ['**/index.html'],
+          },
         },
       ],
     }),

@@ -1,5 +1,6 @@
 -[x] Include blend modes from https://github.com/jamieowen/glsl-blend/
 - Check that all blend modes work correctly with proper alpha handling
+- [x] Fix deployment to GitHub Pages to include the full example list
 - [ ] Add visual unit tests for all blend modes
 - [ ] Use the shaders from glsl-blend directly instead of importing via npm (to allow adding more modes and fixing issues since it is not actively maintained)
 - [ ] Add REPLACE and REMOVE blend modes
