@@ -8,7 +8,7 @@ export { LayerSystem, createLayerSystem } from './LayerSystem.js';
 export { Layer } from './Layer.js';
 export { Compositor } from './Compositor.js';
 export { LayerUI } from './LayerUI.js';
-export { BlendModes, getP5BlendMode, DEFAULT_LAYER_OPTIONS } from './constants.js';
+export { BlendModes, getBlendModeIndex, DEFAULT_LAYER_OPTIONS } from './constants.js';
 
 // Version
 export const VERSION = '0.1.0';

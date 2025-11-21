@@ -1,19 +1,17 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
+import glslify from 'rollup-plugin-glslify';
 import { readFileSync } from 'fs';
 
-// Plugin to inline shader files as strings
+// Plugin to inline shader files as strings (now with glslify processing)
 function shaderPlugin() {
   return {
     name: 'shader-loader',
     transform(code, id) {
       if (id.endsWith('.vert') || id.endsWith('.frag')) {
-        // Read shader file and export as string
-        const shaderCode = readFileSync(id, 'utf-8');
-        return {
-          code: `export default ${JSON.stringify(shaderCode)};`,
-          map: { mappings: '' }
-        };
+        // Shader files are already processed by glslify plugin
+        // This plugin is now just for compatibility
+        return null;
       }
     }
   };
@@ -42,6 +40,10 @@ export default [
     },
     external: ['p5'],
     plugins: [
+      glslify({
+        include: ['**/*.frag', '**/*.vert'],
+        compress: false
+      }),
       shaderPlugin(),
       nodeResolve()
     ]
@@ -60,6 +62,10 @@ export default [
     },
     external: ['p5'],
     plugins: [
+      glslify({
+        include: ['**/*.frag', '**/*.vert'],
+        compress: false
+      }),
       shaderPlugin(),
       nodeResolve(),
       terser({
@@ -79,6 +85,10 @@ export default [
     },
     external: ['p5'],
     plugins: [
+      glslify({
+        include: ['**/*.frag', '**/*.vert'],
+        compress: false
+      }),
       shaderPlugin(),
       nodeResolve()
     ]
