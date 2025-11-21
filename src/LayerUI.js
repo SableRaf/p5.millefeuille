@@ -170,8 +170,20 @@ export class LayerUI {
         e.preventDefault();
         
         // Calculate new position
-        const newX = e.clientX - offsetX;
-        const newY = e.clientY - offsetY;
+        let newX = e.clientX - offsetX;
+        let newY = e.clientY - offsetY;
+
+        // Get panel dimensions
+        const panelWidth = this.container.offsetWidth;
+        
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Constrain position to keep panel visible (with minimum 50px visible)
+        const minVisible = 50;
+        newX = Math.max(-panelWidth + minVisible, Math.min(newX, viewportWidth - minVisible));
+        newY = Math.max(0, Math.min(newY, viewportHeight - minVisible));
 
         this.container.style.left = newX + 'px';
         this.container.style.top = newY + 'px';

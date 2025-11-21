@@ -2,10 +2,10 @@
 - Check that all blend modes work correctly with proper alpha handling
 - [x] Fix deployment to GitHub Pages to include the full example list
 - [x] Update the layer thumbnail after the first draw
+- [x] Fix  bug in LayerUI when dragging the panel or clicking the collapse button (moves the panel back to top-left corner)
+- [x] Prevent moving the LayerUI panel offscreen
 
 ## Ready for work
-- [x] Fix  bug in LayerUI when dragging the panel or clicking the collapse button (moves the panel back to top-left corner)
-- [ ] Prevent moving the LayerUI panel offscreen
 
 ## Needs planning/research/discussion
 - [ ] Add `displayName` property to layers separate from ID & name
