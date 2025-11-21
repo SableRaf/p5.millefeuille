@@ -175,7 +175,13 @@ export class LayerSystem {
 
     const layer = this.layers.get(this.activeLayerId);
     if (layer) {
+      const wasFirstDraw = !layer.hasBeenDrawnTo;
       layer.end();
+      
+      // Update UI thumbnail after first draw
+      if (wasFirstDraw && this.ui) {
+        this.ui._updateLayerThumbnail(layer.id);
+      }
     }
 
     this.activeLayerId = null;

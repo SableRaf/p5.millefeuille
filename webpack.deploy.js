@@ -31,7 +31,7 @@ module.exports = {
       templateContent: ({ htmlWebpackPlugin }) => {
         const template = fs.readFileSync('./examples/01-basic/index.html', 'utf-8');
         const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
-        let html = template.replace(/\.\.\/(dist|lib)\//g, '../lib/');
+        let html = template.replace(/\.\.\/(\.\.\/)??(dist|lib)\//g, '../lib/');
         html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
         return html;
       },
@@ -43,7 +43,7 @@ module.exports = {
       templateContent: ({ htmlWebpackPlugin }) => {
         const template = fs.readFileSync('./examples/02-blend-modes/index.html', 'utf-8');
         const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
-        let html = template.replace(/\.\.\/(dist|lib)\//g, '../lib/');
+        let html = template.replace(/\.\.\/(\.\.\/)??(dist|lib)\//g, '../lib/');
         html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
         return html;
       },
@@ -66,14 +66,28 @@ module.exports = {
           from: 'examples/01-basic',
           to: '01-basic',
           globOptions: {
-            ignore: ['**/index.html'],
+            ignore: ['**/index.html', '**/sketch.js'],
           },
         },
         {
           from: 'examples/02-blend-modes',
           to: '02-blend-modes',
           globOptions: {
-            ignore: ['**/index.html'],
+            ignore: ['**/index.html', '**/sketch.js'],
+          },
+        },
+        {
+          from: 'examples/01-basic/sketch.js',
+          to: '01-basic/sketch.js',
+          transform(content) {
+            return content.toString().replace(/\.\.\/\.\.\/dist\//g, '../lib/');
+          },
+        },
+        {
+          from: 'examples/02-blend-modes/sketch.js',
+          to: '02-blend-modes/sketch.js',
+          transform(content) {
+            return content.toString().replace(/\.\.\/\.\.\/dist\//g, '../lib/');
           },
         },
       ],
