@@ -1,0 +1,22 @@
+body {
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #1a1a1a;
+  font-family: sans-serif;
+  color: #fff;
+  flex-direction: column;
+}
+
+canvas {
+  border: 1px solid #444;
+}
+
+.info {
+  margin-top: 20px;
+  text-align: center;
+  color: #aaa;
+}
