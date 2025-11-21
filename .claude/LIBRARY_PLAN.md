@@ -637,7 +637,7 @@ p5.registerAddon(millefeuilleAddon);
 
 ## References
 
-- [p5.js Addon Tutorial](https://p5js.org/tutorials/creating-libraries/)
+- [p5.js Addon Tutorial](https://beta.p5js.org/contribute/creating_libraries/)
 - [p5.js GitHub - addon examples](https://github.com/processing/p5.js/blob/main/contributor_docs/creating_libraries.md)
 - [p5.ble.js](https://github.com/ITPNYU/p5.ble.js) - Example addon using registerAddon
 - [p5.serialserver](https://github.com/p5-serial/p5.serialserver) - Another addon reference
