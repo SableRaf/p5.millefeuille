@@ -8,6 +8,7 @@
 - [x] Fix re-ordering of layers causing other layers to disappear (see blend modes example)
 
 ## Ready for work
+- [ ] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard
 
 ## Needs planning/research/discussion
 - [ ] Turn into a p5.js library (see LIBRARY_PLAN.md for details)
