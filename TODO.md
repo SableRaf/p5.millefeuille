@@ -4,10 +4,10 @@
 - [x] Update the layer thumbnail after the first draw
 - [x] Fix  bug in LayerUI when dragging the panel or clicking the collapse button (moves the panel back to top-left corner)
 - [x] Prevent moving the LayerUI panel offscreen
+- [x] Fix re-ordering of layers flipping y axis (see basic example)
+- [x] Fix re-ordering of layers causing other layers to disappear (see blend modes example)
 
 ## Ready for work
-- [ ] Fix re-ordering of layers flipping y axis (see basic example)
-- [ ] Fix re-ordering of layers causing other layers to disappear (see blend modes example)
 
 ## Needs planning/research/discussion
 - [ ] Turn into a p5.js library (see LIBRARY_PLAN.md for details)

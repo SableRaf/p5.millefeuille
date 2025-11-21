@@ -44,8 +44,8 @@ vec3 applyBlendMode(int mode, vec3 base, vec3 blend, float opacity) {
 }
 
 void main() {
-  // Flip y-coordinate for p5.js texture coordinate system
-  vec2 uv = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
+  // Use texture coordinates directly
+  vec2 uv = vTexCoord;
 
   // Sample textures
   vec4 layerColor = texture2D(layerTexture, uv);
