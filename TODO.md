@@ -1,7 +1,8 @@
--[x] Include blend modes from https://github.com/jamieowen/glsl-blend/ (look at issues #3 Add Hue, Luminance, Saturation & Color Modes, #6 Blend Normal with Alpha, #12 Subtract mode error)
-  - ✅ Installed glsl-blend and rollup-plugin-glslify
-  - ✅ Replaced custom shaders with glsl-blend functions
-  - ✅ Implemented ping-pong buffer compositing for proper blend mode support
-  - ✅ Added 14 blend modes: Normal, Multiply, Screen, Add, Subtract, Overlay, Soft Light, Hard Light, Color Dodge, Color Burn, Darken, Lighten, Difference, Exclusion
-  - ✅ Updated compositor to use shader-based blending instead of p5.js blend modes
-  - ⚠️ Note: Hue, Luminance, Saturation & Color modes are not available in glsl-blend (see issue #3)
+-[x] Include blend modes from https://github.com/jamieowen/glsl-blend/
+- Check that all blend modes work correctly with proper alpha handling
+- [ ] Add visual unit tests for all blend modes
+- [ ] Use the shaders from glsl-blend directly instead of importing via npm (to allow adding more modes and fixing issues since it is not actively maintained)
+- [ ] Add REPLACE and REMOVE blend modes
+- [ ] Investigate issue `#12 Subtract mode error` from the glsl-blend repo
+- [ ] Investigate issue `#6 Blend Normal with Alpha` from the glsl-blend repo
+- [ ] Add adjustment layers (hue, saturation, brightness, contrast, etc.)

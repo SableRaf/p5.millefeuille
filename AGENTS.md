@@ -396,3 +396,14 @@ When making changes:
 - **Current Version:** 0.1.0
 - **License:** LGPL-2.1
 - **Peer Dependency:** p5.js ^2.1.1
+
+
+## Changelog
+
+### 2025-11-21
+  - ✅ Installed glsl-blend and rollup-plugin-glslify
+  - ✅ Replaced custom shaders with glsl-blend functions
+  - ✅ Implemented ping-pong buffer compositing for proper blend mode support
+  - ✅ Added 14 blend modes: Normal, Multiply, Screen, Add, Subtract, Overlay, Soft Light, Hard Light, Color Dodge, Color Burn, Darken, Lighten, Difference, Exclusion
+  - ✅ Updated compositor to use shader-based blending instead of p5.js blend modes
+  - ⚠️ Note: Hue, Luminance, Saturation & Color modes are not available in glsl-blend (see issue #3)
