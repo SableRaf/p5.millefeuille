@@ -39,3 +39,12 @@ canvas {
 .info strong {
   color: #6cf;
 }
+
+.info a {
+  color: #6cf;
+  text-decoration: none;
+}
+
+.info a:hover {
+  text-decoration: underline;
+}

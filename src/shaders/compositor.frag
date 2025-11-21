@@ -51,8 +51,8 @@ void main() {
   vec4 layerColor = texture2D(layerTexture, uv);
   vec4 bgColor = texture2D(backgroundTexture, uv);
 
-  // Calculate final opacity
-  float finalOpacity = layerOpacity;
+  // Calculate final opacity from layer alpha and opacity uniform
+  float finalOpacity = layerColor.a * layerOpacity;
 
   // Apply mask if present
   if (hasMask) {
@@ -61,9 +61,15 @@ void main() {
     finalOpacity *= maskValue;
   }
 
-  // Apply blend mode
+  // If layer is completely transparent, just output background
+  if (finalOpacity <= 0.0) {
+    gl_FragColor = bgColor;
+    return;
+  }
+
+  // Apply blend mode only where layer has content
   vec3 blendedColor = applyBlendMode(blendMode, bgColor.rgb, layerColor.rgb, finalOpacity);
 
-  // Output with original alpha handling
+  // Output with proper alpha compositing
   gl_FragColor = vec4(blendedColor, 1.0);
 }
