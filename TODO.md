@@ -4,8 +4,11 @@
 - [x] Update the layer thumbnail after the first draw
 
 ## Ready for work
+- [ ] Fix  bug in LayerUI when dragging the panel or clicking the collapse button (moves the panel back to top-left corner)
+- [ ] Prevent moving the LayerUI panel offscreen
 
 ## Needs planning/research/discussion
+- [ ] Add `displayName` property to layers separate from ID & name
 - [ ] Add visual unit tests for all blend modes
 - [ ] Use the shaders from glsl-blend directly instead of importing via npm (to allow adding more modes and fixing issues since it is not actively maintained)
 - [ ] Add REPLACE and REMOVE blend modes
