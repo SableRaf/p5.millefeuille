@@ -4,7 +4,7 @@
 - [x] Update the layer thumbnail after the first draw
 
 ## Ready for work
-- [ ] Fix  bug in LayerUI when dragging the panel or clicking the collapse button (moves the panel back to top-left corner)
+- [x] Fix  bug in LayerUI when dragging the panel or clicking the collapse button (moves the panel back to top-left corner)
 - [ ] Prevent moving the LayerUI panel offscreen
 
 ## Needs planning/research/discussion

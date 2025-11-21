@@ -65,6 +65,8 @@ export class LayerUI {
     if (this.options.collapsible) {
       const collapseBtn = header.querySelector('.p5ml-collapse-btn');
       collapseBtn.addEventListener('click', () => this.toggle());
+      // Prevent collapse button from triggering drag
+      collapseBtn.addEventListener('mousedown', (e) => e.stopPropagation());
     }
 
     // Arrow button handlers
@@ -72,6 +74,9 @@ export class LayerUI {
     const downBtn = header.querySelector('.p5ml-arrow-down');
     upBtn.addEventListener('click', () => this._moveSelectedLayer(-1));
     downBtn.addEventListener('click', () => this._moveSelectedLayer(1));
+    // Prevent arrow buttons from triggering drag
+    upBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+    downBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
     // Make draggable if enabled
     if (this.options.draggable) {
@@ -138,31 +143,38 @@ export class LayerUI {
    */
   _makeDraggable(header) {
     let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
+    let offsetX;
+    let offsetY;
 
     header.style.cursor = 'move';
 
     header.addEventListener('mousedown', (e) => {
+      // Get current position using getBoundingClientRect for accuracy
+      const rect = this.container.getBoundingClientRect();
+      
+      // Calculate offset from mouse to panel's top-left corner
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      
       isDragging = true;
-      initialX = e.clientX - (parseInt(this.container.style.left) || 0);
-      initialY = e.clientY - (parseInt(this.container.style.top) || 0);
 
-      // Remove positioning from initial placement
-      this.container.style.right = 'auto';
-      this.container.style.bottom = 'auto';
+      // Clear all positioning properties and switch to left/top only
+      this.container.style.right = '';
+      this.container.style.bottom = '';
+      this.container.style.left = rect.left + 'px';
+      this.container.style.top = rect.top + 'px';
     });
 
     document.addEventListener('mousemove', (e) => {
       if (isDragging) {
         e.preventDefault();
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
+        
+        // Calculate new position
+        const newX = e.clientX - offsetX;
+        const newY = e.clientY - offsetY;
 
-        this.container.style.left = currentX + 'px';
-        this.container.style.top = currentY + 'px';
+        this.container.style.left = newX + 'px';
+        this.container.style.top = newY + 'px';
       }
     });
 
