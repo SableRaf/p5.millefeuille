@@ -26,6 +26,7 @@ export class LayerSystem {
     }
 
     this.layers = new Map(); // id -> Layer
+    this.layerNames = new Map(); // name -> id (for string-based lookups)
     this.layerIdCounter = 0;
     this.activeLayerId = null;
     this.compositor = new Compositor(p5Instance);
@@ -46,49 +47,84 @@ export class LayerSystem {
   }
 
   /**
+   * Gets a layer by ID or name
+   * @private
+   * @param {number|string} layerIdOrName - The layer ID (number) or name (string)
+   * @returns {Layer|null} The layer, or null if not found
+   */
+  _getLayerById(layerIdOrName) {
+    // If it's a number, look up directly by ID
+    if (typeof layerIdOrName === 'number') {
+      return this.layers.get(layerIdOrName) || null;
+    }
+    
+    // If it's a string, look up by name first
+    if (typeof layerIdOrName === 'string') {
+      const id = this.layerNames.get(layerIdOrName);
+      if (id !== undefined) {
+        return this.layers.get(id) || null;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * Creates a new layer
    * @param {string} name - Optional name for the layer
    * @param {Object} options - Layer configuration options
-   * @returns {number} The layer ID
+   * @returns {Layer} The created layer instance
    */
   createLayer(name = '', options = {}) {
     const id = this._generateId();
-    const layer = new Layer(this.p, id, name, {
+    const layerName = name || `Layer ${id}`;
+    const layer = new Layer(this.p, id, layerName, {
       ...options,
       zIndex: options.zIndex !== undefined ? options.zIndex : id
     });
 
     this.layers.set(id, layer);
-    return id;
+    
+    // Register the name for string-based lookups
+    if (layerName) {
+      this.layerNames.set(layerName, id);
+    }
+    
+    return layer;
   }
 
   /**
    * Removes a layer and disposes of its resources
-   * @param {number} layerId - The ID of the layer to remove
+   * @param {number|string} layerIdOrName - The ID or name of the layer to remove
    */
-  removeLayer(layerId) {
-    const layer = this.layers.get(layerId);
+  removeLayer(layerIdOrName) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
+      console.warn(`Layer ${layerIdOrName} not found`);
       return;
     }
 
     // If this layer is currently active, end it
-    if (this.activeLayerId === layerId) {
-      this.endLayer();
+    if (this.activeLayerId === layer.id) {
+      this.end();
+    }
+
+    // Remove from name map if it has a name
+    if (layer.name) {
+      this.layerNames.delete(layer.name);
     }
 
     layer.dispose();
-    this.layers.delete(layerId);
+    this.layers.delete(layer.id);
   }
 
   /**
-   * Gets a layer by ID
-   * @param {number} layerId - The layer ID
+   * Gets a layer by ID or name
+   * @param {number|string} layerIdOrName - The layer ID or name
    * @returns {Layer|null} The layer, or null if not found
    */
-  getLayer(layerId) {
-    return this.layers.get(layerId) || null;
+  getLayer(layerIdOrName) {
+    return this._getLayerById(layerIdOrName);
   }
 
   /**
@@ -109,29 +145,29 @@ export class LayerSystem {
 
   /**
    * Begins drawing to a specific layer
-   * @param {number} layerId - The ID of the layer to draw to
+   * @param {number|string} layerIdOrName - The ID or name of the layer to draw to
    */
-  beginLayer(layerId) {
+  begin(layerIdOrName) {
     // Check if another layer is already active
     if (this.activeLayerId !== null) {
       console.warn(`Layer ${this.activeLayerId} is already active. Ending it first.`);
-      this.endLayer();
+      this.end();
     }
 
-    const layer = this.layers.get(layerId);
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.error(`Layer ${layerId} not found`);
+      console.error(`Layer ${layerIdOrName} not found`);
       return;
     }
 
     layer.begin();
-    this.activeLayerId = layerId;
+    this.activeLayerId = layer.id;
   }
 
   /**
    * Ends drawing to the current layer
    */
-  endLayer() {
+  end() {
     if (this.activeLayerId === null) {
       console.warn('No active layer to end');
       return;
@@ -146,73 +182,91 @@ export class LayerSystem {
   }
 
   /**
-   * Sets the visibility of a layer
-   * @param {number} layerId - The layer ID
-   * @param {boolean} visible - Whether the layer should be visible
+   * Shows a layer (makes it visible)
+   * @param {number|string} layerIdOrName - The layer ID or name
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  setVisible(layerId, visible) {
-    const layer = this.layers.get(layerId);
+  show(layerIdOrName) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.setVisible(visible);
+    return layer.show();
+  }
+
+  /**
+   * Hides a layer (makes it invisible)
+   * @param {number|string} layerIdOrName - The layer ID or name
+   * @returns {Layer|null} The layer for chaining, or null if not found
+   */
+  hide(layerIdOrName) {
+    const layer = this._getLayerById(layerIdOrName);
+    if (!layer) {
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
+    }
+    return layer.hide();
   }
 
   /**
    * Sets the opacity of a layer
-   * @param {number} layerId - The layer ID
+   * @param {number|string} layerIdOrName - The layer ID or name
    * @param {number} opacity - Opacity value between 0 and 1
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  setOpacity(layerId, opacity) {
-    const layer = this.layers.get(layerId);
+  setOpacity(layerIdOrName, opacity) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.setOpacity(opacity);
+    return layer.setOpacity(opacity);
   }
 
   /**
    * Sets the blend mode of a layer
-   * @param {number} layerId - The layer ID
+   * @param {number|string} layerIdOrName - The layer ID or name
    * @param {string} blendMode - One of the BlendModes constants
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  setBlendMode(layerId, blendMode) {
-    const layer = this.layers.get(layerId);
+  setBlendMode(layerIdOrName, blendMode) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.setBlendMode(blendMode);
+    return layer.setBlendMode(blendMode);
   }
 
   /**
    * Sets the z-index of a layer
-   * @param {number} layerId - The layer ID
+   * @param {number|string} layerIdOrName - The layer ID or name
    * @param {number} zIndex - The new z-index (higher = on top)
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  setLayerIndex(layerId, zIndex) {
-    const layer = this.layers.get(layerId);
+  setLayerIndex(layerIdOrName, zIndex) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.setZIndex(zIndex);
+    return layer.setZIndex(zIndex);
   }
 
   /**
    * Moves a layer by a relative amount in the stack
-   * @param {number} layerId - The layer ID
+   * @param {number|string} layerIdOrName - The layer ID or name
    * @param {number} delta - The amount to move (positive = forward, negative = backward)
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  moveLayer(layerId, delta) {
-    const layer = this.layers.get(layerId);
+  moveLayer(layerIdOrName, delta) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.setZIndex(layer.zIndex + delta);
+    return layer.setZIndex(layer.zIndex + delta);
   }
 
   /**
@@ -233,29 +287,31 @@ export class LayerSystem {
 
   /**
    * Attaches a mask to a layer
-   * @param {number} layerId - The layer ID
+   * @param {number|string} layerIdOrName - The layer ID or name
    * @param {p5.Framebuffer|p5.Image} maskSource - The mask to apply
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  setMask(layerId, maskSource) {
-    const layer = this.layers.get(layerId);
+  setMask(layerIdOrName, maskSource) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.setMask(maskSource);
+    return layer.setMask(maskSource);
   }
 
   /**
    * Removes the mask from a layer
-   * @param {number} layerId - The layer ID
+   * @param {number|string} layerIdOrName - The layer ID or name
+   * @returns {Layer|null} The layer for chaining, or null if not found
    */
-  clearMask(layerId) {
-    const layer = this.layers.get(layerId);
+  clearMask(layerIdOrName) {
+    const layer = this._getLayerById(layerIdOrName);
     if (!layer) {
-      console.warn(`Layer ${layerId} not found`);
-      return;
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
     }
-    layer.clearMask();
+    return layer.clearMask();
   }
 
   /**
@@ -335,7 +391,7 @@ export class LayerSystem {
   dispose() {
     // End active layer if any
     if (this.activeLayerId !== null) {
-      this.endLayer();
+      this.end();
     }
 
     // Dispose UI if exists

@@ -77,24 +77,37 @@ export class Layer {
   }
 
   /**
-   * Sets the visibility of this layer
-   * @param {boolean} visible - Whether the layer should be visible
+   * Shows this layer (makes it visible)
+   * @returns {Layer} This layer for chaining
    */
-  setVisible(visible) {
-    this.visible = !!visible;
+  show() {
+    this.visible = true;
+    return this;
+  }
+
+  /**
+   * Hides this layer (makes it invisible)
+   * @returns {Layer} This layer for chaining
+   */
+  hide() {
+    this.visible = false;
+    return this;
   }
 
   /**
    * Sets the opacity of this layer
    * @param {number} opacity - Opacity value between 0 and 1
+   * @returns {Layer} This layer for chaining
    */
   setOpacity(opacity) {
     this.opacity = this._clampOpacity(opacity);
+    return this;
   }
 
   /**
    * Sets the blend mode for this layer
    * @param {string} mode - One of the BlendModes constants
+   * @returns {Layer} This layer for chaining
    */
   setBlendMode(mode) {
     if (!Object.values(BlendModes).includes(mode)) {
@@ -103,33 +116,40 @@ export class Layer {
     } else {
       this.blendMode = mode;
     }
+    return this;
   }
 
   /**
    * Sets the z-index (layer order) for this layer
    * @param {number} zIndex - The z-index value (higher = on top)
+   * @returns {Layer} This layer for chaining
    */
   setZIndex(zIndex) {
     this.zIndex = zIndex;
+    return this;
   }
 
   /**
    * Attaches a mask to this layer
    * @param {p5.Framebuffer|p5.Image} maskSource - The mask to apply
+   * @returns {Layer} This layer for chaining
    */
   setMask(maskSource) {
     if (!maskSource) {
       console.warn('Invalid mask source provided');
-      return;
+      return this;
     }
     this.mask = maskSource;
+    return this;
   }
 
   /**
    * Removes the mask from this layer
+   * @returns {Layer} This layer for chaining
    */
   clearMask() {
     this.mask = null;
+    return this;
   }
 
   /**

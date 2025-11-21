@@ -360,7 +360,11 @@ export class LayerUI {
     visibilityCheckbox.title = 'Toggle visibility';
     visibilityCheckbox.addEventListener('change', (e) => {
       e.stopPropagation();
-      this.layerSystem.setVisible(layer.id, e.target.checked);
+      if (e.target.checked) {
+        this.layerSystem.show(layer.id);
+      } else {
+        this.layerSystem.hide(layer.id);
+      }
     });
 
     rightControls.appendChild(blendIndicator);

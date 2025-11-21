@@ -38,7 +38,6 @@ npm install p5.millefeuille
 import { createLayerSystem, BlendModes } from 'p5.millefeuille';
 
 let layers;
-let bgLayer, fxLayer;
 
 function setup() {
   createCanvas(800, 600, WEBGL);
@@ -46,27 +45,26 @@ function setup() {
   // Create the layer system
   layers = createLayerSystem(window);
 
-  // Create layers
-  bgLayer = layers.createLayer('background');
-  fxLayer = layers.createLayer('effects', {
-    blendMode: BlendModes.ADD,
-    opacity: 0.7
-  });
+  // Create layers - now with method chaining!
+  layers.createLayer('background');
+  layers.createLayer('effects')
+    .setBlendMode(BlendModes.ADD)
+    .setOpacity(0.7);
 }
 
 function draw() {
-  // Draw to background layer
-  layers.beginLayer(bgLayer);
+  // Draw to background layer - using string names
+  layers.begin('background');
   clear();
   background(30, 30, 60);
   // ... draw your background content
-  layers.endLayer();
+  layers.end();
 
   // Draw to effects layer
-  layers.beginLayer(fxLayer);
+  layers.begin('effects');
   clear();
   // ... draw your effects
-  layers.endLayer();
+  layers.end();
 
   // Composite all layers to main canvas
   layers.render();
@@ -95,7 +93,7 @@ const layers = createLayerSystem(window);
 
 #### `createLayer(name, options)`
 
-Creates a new layer and returns its ID.
+Creates a new layer and returns the Layer instance.
 
 **Parameters:**
 - `name` (string, optional) - Human-readable name for the layer
@@ -109,33 +107,42 @@ Creates a new layer and returns its ID.
   - `depth` (boolean) - Enable depth buffer (default: false)
   - `antialias` (boolean) - Enable antialiasing (default: false)
 
-**Returns:** `number` - Layer ID
+**Returns:** `Layer` - The created layer instance
 
 **Example:**
 ```javascript
-const bgLayer = layers.createLayer('Background');
-const fxLayer = layers.createLayer('Effects', {
-  blendMode: BlendModes.ADD,
-  opacity: 0.8
-});
+// Create and configure with chaining
+layers.createLayer('Effects')
+  .setBlendMode(BlendModes.ADD)
+  .setOpacity(0.8);
+
+// Or store the reference
+const bg = layers.createLayer('Background');
 ```
 
 ---
 
-#### `beginLayer(layerId)` / `endLayer()`
+#### `begin(layerIdOrName)` / `end()`
 
 Begin and end drawing to a specific layer.
 
 **Parameters:**
-- `layerId` (number) - The ID of the layer to draw to
+- `layerIdOrName` (number|string) - The layer ID or name
 
 **Example:**
 ```javascript
-layers.beginLayer(bgLayer);
+// Using layer name (recommended)
+layers.begin('Background');
 clear();
 background(255);
 circle(0, 0, 100);
-layers.endLayer();
+layers.end();
+
+// Using layer reference
+const bg = layers.createLayer('Background');
+layers.begin(bg.id);
+// ... draw
+layers.end();
 ```
 
 ---
@@ -160,121 +167,154 @@ layers.render(() => {
 
 ---
 
-#### `setVisible(layerId, visible)`
+#### `show(layerIdOrName)` / `hide(layerIdOrName)`
 
-Sets layer visibility.
+Shows or hides a layer.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
-- `visible` (boolean) - Visibility state
+- `layerIdOrName` (number|string) - The layer ID or name
+
+**Returns:** `Layer|null` - The layer for chaining, or null if not found
 
 **Example:**
 ```javascript
-layers.setVisible(fxLayer, false); // Hide layer
+layers.hide('Effects'); // Hide layer
+layers.show('Effects'); // Show layer
+
+// Chaining
+layers.show('Effects').setOpacity(0.5);
 ```
 
 ---
 
-#### `setOpacity(layerId, opacity)`
+#### `setOpacity(layerIdOrName, opacity)`
 
 Sets layer opacity.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
+- `layerIdOrName` (number|string) - The layer ID or name
 - `opacity` (number) - Opacity value 0-1 (will be clamped)
+
+**Returns:** `Layer|null` - The layer for chaining, or null if not found
 
 **Example:**
 ```javascript
-layers.setOpacity(fxLayer, 0.5); // 50% opacity
+layers.setOpacity('Effects', 0.5); // 50% opacity
+
+// Chaining
+layers.setOpacity('Effects', 0.8).setBlendMode(BlendModes.ADD);
 ```
 
 ---
 
-#### `setBlendMode(layerId, mode)`
+#### `setBlendMode(layerIdOrName, mode)`
 
 Sets layer blend mode.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
+- `layerIdOrName` (number|string) - The layer ID or name
 - `mode` (string) - One of: `BlendModes.NORMAL`, `BlendModes.MULTIPLY`, `BlendModes.SCREEN`, `BlendModes.ADD`, `BlendModes.SUBTRACT`
+
+**Returns:** `Layer|null` - The layer for chaining, or null if not found
 
 **Example:**
 ```javascript
-layers.setBlendMode(fxLayer, BlendModes.ADD);
+layers.setBlendMode('Effects', BlendModes.ADD);
+
+// Chaining
+layers.setBlendMode('Effects', BlendModes.MULTIPLY).setOpacity(0.7);
 ```
 
 ---
 
-#### `setLayerIndex(layerId, zIndex)`
+#### `setLayerIndex(layerIdOrName, zIndex)`
 
 Sets the z-index (draw order) of a layer.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
+- `layerIdOrName` (number|string) - The layer ID or name
 - `zIndex` (number) - Z-index value (higher = drawn on top)
+
+**Returns:** `Layer|null` - The layer for chaining, or null if not found
 
 **Example:**
 ```javascript
-layers.setLayerIndex(bgLayer, 0);
-layers.setLayerIndex(fxLayer, 10);
+layers.setLayerIndex('Background', 0);
+layers.setLayerIndex('Effects', 10);
 ```
 
 ---
 
-#### `moveLayer(layerId, delta)`
+#### `moveLayer(layerIdOrName, delta)`
 
 Moves a layer by a relative amount in the stack.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
+- `layerIdOrName` (number|string) - The layer ID or name
 - `delta` (number) - Amount to move (positive = forward, negative = backward)
+
+**Returns:** `Layer|null` - The layer for chaining, or null if not found
 
 **Example:**
 ```javascript
-layers.moveLayer(fxLayer, 1); // Move forward by 1
+layers.moveLayer('Effects', 1); // Move forward by 1
 ```
 
 ---
 
-#### `setMask(layerId, maskSource)` / `clearMask(layerId)`
+#### `setMask(layerIdOrName, maskSource)` / `clearMask(layerIdOrName)`
 
 Attach or remove a mask from a layer.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
+- `layerIdOrName` (number|string) - The layer ID or name
 - `maskSource` (p5.Framebuffer | p5.Image) - The mask (grayscale, white=opaque, black=transparent)
+
+**Returns:** `Layer|null` - The layer for chaining, or null if not found
 
 **Example:**
 ```javascript
 const maskBuffer = createFramebuffer({ width, height });
 // ... draw to maskBuffer
-layers.setMask(contentLayer, maskBuffer);
+layers.setMask('Content', maskBuffer);
 
 // Remove mask
-layers.clearMask(contentLayer);
+layers.clearMask('Content');
+
+// Chaining
+layers.setMask('Content', maskBuffer).setOpacity(0.8);
 ```
 
 ---
 
-#### `removeLayer(layerId)`
+#### `removeLayer(layerIdOrName)`
 
 Removes a layer and disposes of its resources.
 
 **Parameters:**
-- `layerId` (number) - The layer ID
+- `layerIdOrName` (number|string) - The layer ID or name
 
 **Example:**
 ```javascript
-layers.removeLayer(fxLayer);
+layers.removeLayer('Effects');
 ```
 
 ---
 
-#### `getLayer(layerId)`
+#### `getLayer(layerIdOrName)`
 
-Gets a Layer instance by ID.
+Gets a Layer instance by ID or name.
+
+**Parameters:**
+- `layerIdOrName` (number|string) - The layer ID or name
 
 **Returns:** `Layer` object or null
+
+**Example:**
+```javascript
+const layer = layers.getLayer('Effects');
+console.log(layer.opacity);
+```
 
 ---
 

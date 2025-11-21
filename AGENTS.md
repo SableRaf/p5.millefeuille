@@ -25,29 +25,33 @@ The main orchestrator that manages the layer stack and coordinates rendering.
 
 **Key Responsibilities:**
 - Manages the layer collection (Map of layer IDs to Layer instances)
+- Maintains name-to-ID mapping (Map) for string-based layer lookups
 - Provides factory function `createLayerSystem()` for initialization
 - Handles layer lifecycle (create, remove, get)
-- Coordinates drawing operations (beginLayer/endLayer)
-- Manages layer properties (visibility, opacity, blend mode, z-index, masks)
+- Coordinates drawing operations (begin/end)
+- Manages layer properties (visibility via show/hide, opacity, blend mode, z-index, masks)
 - Detects canvas resizes and updates layers accordingly
 - Validates WebGL mode on construction
 
 **Important Implementation Details:**
 - Auto-detects p5 instance in global mode (checks `window.p5.instance`)
 - Validates WebGL context on initialization
-- Tracks active layer to prevent nested beginLayer calls
+- Tracks active layer to prevent nested begin calls
 - Maintains canvas size state for auto-resize detection
 - Uses auto-incrementing IDs for layers
+- Layers can be accessed by numeric ID or string name via `_getLayerById()` helper
+- Methods return Layer instances for chaining support
 
 #### 2. **Layer** ([src/Layer.js](src/Layer.js))
 Represents a single layer backed by a `p5.Framebuffer` with metadata.
 
 **Key Responsibilities:**
 - Wraps a `p5.Framebuffer` with rendering metadata
-- Manages layer properties (visible, opacity, blendMode, zIndex)
+- Manages layer properties (visible via show/hide, opacity, blendMode, zIndex)
 - Handles framebuffer lifecycle (create, resize, dispose)
 - Provides mask attachment/removal
 - Implements begin/end drawing to the layer's framebuffer
+- **Supports method chaining** - all setter methods return `this`
 
 **Important Implementation Details:**
 - Framebuffer options match canvas by default (width, height, density)
@@ -55,6 +59,7 @@ Represents a single layer backed by a `p5.Framebuffer` with metadata.
 - Masks can be either `p5.Framebuffer` or `p5.Image`
 - Uses `customSize` flag to track layers with custom dimensions (prevents auto-resize)
 - Implements `toJSON()` for debugging/inspection
+- All modifier methods (`show`, `hide`, `setOpacity`, `setBlendMode`, `setZIndex`, `setMask`, `clearMask`) return `this` for fluent API
 
 #### 3. **Compositor** ([src/Compositor.js](src/Compositor.js))
 Handles the rendering pipeline and shader-based compositing.
@@ -159,27 +164,28 @@ p5.millefeuille/
 ### LayerSystem Methods
 
 **Layer Lifecycle:**
-- `createLayer(name?, options?)` → Returns layer ID (number)
-- `removeLayer(layerId)` → Removes and disposes layer
-- `getLayer(layerId)` → Returns Layer instance or null
+- `createLayer(name?, options?)` → Returns Layer instance (supports method chaining)
+- `removeLayer(layerIdOrName)` → Removes and disposes layer (accepts ID or name)
+- `getLayer(layerIdOrName)` → Returns Layer instance or null (accepts ID or name)
 - `getLayers()` → Returns all layers sorted by z-index
 - `getLayerInfo()` → Returns layer metadata as plain objects
 
 **Drawing:**
-- `beginLayer(layerId)` → Start drawing to layer
-- `endLayer()` → Stop drawing to current layer
+- `begin(layerIdOrName)` → Start drawing to layer (accepts ID or name)
+- `end()` → Stop drawing to current layer
 - `render(clearCallback?)` → Composite all layers to main canvas
 
-**Layer Properties:**
-- `setVisible(layerId, visible)`
-- `setOpacity(layerId, opacity)` → Opacity 0-1
-- `setBlendMode(layerId, mode)` → Use BlendModes constants
-- `setLayerIndex(layerId, zIndex)` → Absolute z-index
-- `moveLayer(layerId, delta)` → Relative z-index change
+**Layer Properties (all accept ID or name, return Layer for chaining):**
+- `show(layerIdOrName)` → Makes layer visible
+- `hide(layerIdOrName)` → Makes layer invisible
+- `setOpacity(layerIdOrName, opacity)` → Opacity 0-1
+- `setBlendMode(layerIdOrName, mode)` → Use BlendModes constants
+- `setLayerIndex(layerIdOrName, zIndex)` → Absolute z-index
+- `moveLayer(layerIdOrName, delta)` → Relative z-index change
 
-**Masking:**
-- `setMask(layerId, maskSource)` → Attach mask (Framebuffer or Image)
-- `clearMask(layerId)` → Remove mask
+**Masking (accept ID or name, return Layer for chaining):**
+- `setMask(layerIdOrName, maskSource)` → Attach mask (Framebuffer or Image)
+- `clearMask(layerIdOrName)` → Remove mask
 
 **Configuration:**
 - `setAutoResize(enabled)` → Enable/disable auto-resize on canvas size change
@@ -248,30 +254,31 @@ p5.millefeuille/
 ### Basic Usage Pattern
 ```javascript
 // Setup
-let layers, bgLayer, fxLayer;
+let layers;
 
 function setup() {
   createCanvas(800, 600, WEBGL);
   layers = createLayerSystem();
-  bgLayer = layers.createLayer('Background');
-  fxLayer = layers.createLayer('Effects', {
-    blendMode: BlendModes.ADD,
-    opacity: 0.7
-  });
+  
+  // Create layers with string names and method chaining
+  layers.createLayer('Background');
+  layers.createLayer('Effects')
+    .setBlendMode(BlendModes.ADD)
+    .setOpacity(0.7);
 }
 
 function draw() {
-  // Draw to background
-  layers.beginLayer(bgLayer);
+  // Draw to background - using string-based access
+  layers.begin('Background');
   clear();
   // ... draw content
-  layers.endLayer();
+  layers.end();
 
   // Draw to effects
-  layers.beginLayer(fxLayer);
+  layers.begin('Effects');
   clear();
   // ... draw effects
-  layers.endLayer();
+  layers.end();
 
   // Composite
   layers.render();
@@ -290,23 +297,29 @@ fill(255); // White = visible
 circle(0, 0, 100);
 maskBuffer.end();
 
-// Apply mask
-layers.setMask(contentLayer, maskBuffer);
+// Apply mask - using string name and chaining
+layers.setMask('Content', maskBuffer).setOpacity(0.8);
 ```
 
 ### Dynamic Layer Management
 ```javascript
-// Create layer on demand
+// Create layer on demand with chaining
 if (needsNewLayer) {
-  const newLayer = layers.createLayer('Dynamic');
-  layers.setLayerIndex(newLayer, 10); // Move to top
+  layers.createLayer('Dynamic')
+    .setZIndex(10)
+    .setBlendMode(BlendModes.ADD);
 }
 
-// Toggle visibility
-layers.setVisible(layerId, !layers.getLayer(layerId).visible);
+// Toggle visibility - using string names
+const layer = layers.getLayer('Effects');
+if (layer.visible) {
+  layers.hide('Effects');
+} else {
+  layers.show('Effects');
+}
 
 // Cleanup
-layers.removeLayer(oldLayerId);
+layers.removeLayer('OldLayer');
 ```
 
 ## Error Handling
@@ -314,12 +327,12 @@ layers.removeLayer(oldLayerId);
 ### Common Errors
 1. **"Canvas not initialized"** - `createLayerSystem()` called before `createCanvas()`
 2. **"LayerSystem requires WebGL mode"** - Canvas not created with WEBGL parameter
-3. **"Layer X not found"** - Invalid layer ID passed to methods
-4. **"Layer X is already active"** - Nested `beginLayer()` calls without `endLayer()`
+3. **"Layer X not found"** - Invalid layer ID or name passed to methods
+4. **"Layer X is already active"** - Nested `begin()` calls without `end()`
 5. **"Failed to create framebuffer"** - WebGL context lost or insufficient resources
 
 ### Validation
-- Layer IDs are validated on all methods (console.warn if not found)
+- Layer IDs and names are validated on all methods (console.warn if not found)
 - Opacity values are clamped to [0, 1]
 - Blend modes are validated against BlendModes constants
 - Active layer state prevents nested drawing
