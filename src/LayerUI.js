@@ -911,8 +911,13 @@ export class LayerUI {
     if (pattern && typeof ctx.save === 'function' && typeof ctx.scale === 'function') {
       ctx.save();
       ctx.fillStyle = pattern;
+      // Scale around the center so the checkerboard zooms evenly
+      const cx = width / 2;
+      const cy = height / 2;
+      ctx.translate(cx, cy);
       ctx.scale(scale, scale);
-      ctx.fillRect(0, 0, width / scale, height / scale);
+      ctx.translate(-cx, -cy);
+      ctx.fillRect(0, 0, width, height);
       ctx.restore();
       return;
     }
