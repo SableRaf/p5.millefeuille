@@ -96,11 +96,11 @@ describe('LayerUI', () => {
 
     ui._drawThumbnailImage(ctx, targetCanvas, sourceCanvas, bounds);
 
-    const scale = Math.min(60 / 200, 60 / 100); // 0.3
-    const expectedDestWidth = bounds.width * scale;
-    const expectedDestHeight = bounds.height * scale;
-    const expectedOffsetX = (60 - (200 * scale)) / 2 + bounds.x * scale;
-    const expectedOffsetY = (60 - (100 * scale)) / 2 + bounds.y * scale;
+      const scale = Math.min(60 / bounds.width, 60 / bounds.height);
+      const expectedDestWidth = bounds.width * scale;
+      const expectedDestHeight = bounds.height * scale;
+      const expectedDestX = (60 - expectedDestWidth) / 2;
+      const expectedDestY = (60 - expectedDestHeight) / 2;
 
     expect(ctx.drawImage).toHaveBeenCalledWith(
       sourceCanvas,
@@ -108,8 +108,8 @@ describe('LayerUI', () => {
       bounds.y,
       bounds.width,
       bounds.height,
-      expectedOffsetX,
-      expectedOffsetY,
+        expectedDestX,
+        expectedDestY,
       expectedDestWidth,
       expectedDestHeight
     );

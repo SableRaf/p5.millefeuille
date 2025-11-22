@@ -617,22 +617,15 @@ export class LayerUI {
       return;
     }
 
-    const sourceWidth = sourceCanvas.width || 1;
-    const sourceHeight = sourceCanvas.height || 1;
-    const uniformScale = Math.min(
-      targetCanvas.width / sourceWidth,
-      targetCanvas.height / sourceHeight
+    const zoomScale = Math.min(
+      targetCanvas.width / bounds.width,
+      targetCanvas.height / bounds.height
     );
 
-    const scaledSourceWidth = sourceWidth * uniformScale;
-    const scaledSourceHeight = sourceHeight * uniformScale;
-    const offsetX = (targetCanvas.width - scaledSourceWidth) / 2;
-    const offsetY = (targetCanvas.height - scaledSourceHeight) / 2;
-
-    const destWidth = Math.max(1, bounds.width * uniformScale);
-    const destHeight = Math.max(1, bounds.height * uniformScale);
-    const destX = offsetX + bounds.x * uniformScale;
-    const destY = offsetY + bounds.y * uniformScale;
+    const destWidth = Math.max(1, bounds.width * zoomScale);
+    const destHeight = Math.max(1, bounds.height * zoomScale);
+    const destX = (targetCanvas.width - destWidth) / 2;
+    const destY = (targetCanvas.height - destHeight) / 2;
 
     ctx.save();
     ctx.imageSmoothingEnabled = false;
