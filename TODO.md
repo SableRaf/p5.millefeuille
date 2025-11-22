@@ -22,3 +22,4 @@
 - [ ] Add adjustment layers (hue, saturation, brightness, contrast, etc.)
 - [ ] Add ability to reorder layers via drag-and-drop in the LayerUI
 - [ ] Add export to image for the full canvas or individual layers, with options for file type, quality, and size multipliers (e.g., 2x, 4x) similar to Figma's export options
+- [ ] Add `focused` property to layers to allow specific actions to be applied only to the focused layer (e.g., drawing, transformations). Separate from `active` property used for visibility and blending.
