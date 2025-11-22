@@ -20,7 +20,6 @@
 ### Via CDN (Script Tag)
 
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.1.1/p5.min.js"></script>
 <script src="https://unpkg.com/p5.millefeuille@0.1.0/dist/p5.millefeuille.min.js"></script>
 ```
 
@@ -462,9 +461,9 @@ See [examples/01-basic.html](examples/01-basic.html) for a complete example with
 
 See [examples/02-blend-modes.html](examples/02-blend-modes.html) for interactive blend mode demonstration.
 
-### Masking
+### Thumbnail Cropping Showcase
 
-See [examples/03-masking.html](examples/03-masking.html) for spotlight/reveal effects using masks.
+See [examples/03-thumbnail-cropping/index.html](examples/03-thumbnail-cropping/index.html) to watch the Layer UI crop thumbnails by finding the smallest box of non-transparent pixels, adding gentle padding, and smoothing the result over a few frames.
 
 ## Performance Tips
 
