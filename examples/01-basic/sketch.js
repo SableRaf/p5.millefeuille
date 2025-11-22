@@ -1,88 +1,71 @@
-let ls; // Layer system 
+let ls;
+let flowerArt;
+let fruitArt;
+let gamepadArt;
 
-function setup() {
+async function setup() {
   createCanvas(800, 600, WEBGL);
+  imageMode(CENTER);
 
-  // Create the layer system using the addon API
+  // Load images with callbacks instead of async/await
+  flowerArt = await loadImage('assets/flower.png');
+  fruitArt = await loadImage('assets/fruits.png');
+  gamepadArt = await loadImage('assets/gamepad.png');
+
   ls = createLayerSystem();
+  ls.createLayer('Backdrop');
+  ls.createLayer('Produce');
+  ls.createLayer('Gamepad');
 
-  // Create three layers 
-  ls.createLayer('Background');
-  ls.createLayer('Shapes').setOpacity(0.8);
-  ls.createLayer('Ornaments');
-
-  // Create the UI panel to control layers
   ls.createUI();
 }
 
 function draw() {
-  // Draw background layer - using string-based access
-  ls.begin('Background');
+  drawBackdropLayer();
+  drawProduceLayer();
+  drawCatLayer();
+  ls.render(() => background(12, 14, 26));
+}
+
+function drawBackdropLayer() {
+  ls.begin('Backdrop');
   clear();
-  background(30, 30, 60);
+  background("#108bb4ff");
 
-  // Draw a gradient-like effect
-  noStroke();
-  for (let i = 0; i < 20; i++) {
-    fill(30 + i * 5, 30 + i * 3, 60 + i * 8, 20);
-    circle(0, 0, 600 - i * 30);
+  if (flowerArt) {
+    push();
+    tint(255, 180);
+    image(flowerArt, 0, 0, width * 0.95, height * 0.95);
+    pop();
   }
-  ls.end();
-
-  // Draw shapes layer
-  ls.begin('Shapes');
-  // clear();
-
-  // Rotating squares
-  push();
-  rotateZ(frameCount * 0.01);
-  stroke(255, 200, 100, 10);
-  strokeWeight(3);
-  noFill();
-  for (let i = 0; i < 5; i++) {
-    rotateZ(0.2);
-    rect(0, 0, 100 + i * 40, 100 + i * 40);
-  }
-  pop();
-
-  // Moving circles
-  push();
-  let x = cos(frameCount * 0.02) * 150;
-  let y = sin(frameCount * 0.03) * 100;
-  fill(100, 200, 255, 200);
-  noStroke();
-  circle(x, y, 80);
-  pop();
 
   ls.end();
+}
 
-  // Draw ornament layer
-  ls.begin('Ornaments');
+function drawProduceLayer() {
+  ls.begin('Produce');
   clear();
 
-  // Draw some decorative elements at the top
-  push();
-  translate(0, -200);
-
-  // Title decoration - small circles
-  fill(255, 200);
-  noStroke();
-  for (let i = 0; i < 12; i++) {
-    let angle = (i / 12) * TWO_PI;
-    let x = cos(angle + frameCount * 0.02) * 80;
-    let y = sin(angle + frameCount * 0.02) * 80;
-    circle(x, y, 10);
+  if (fruitArt) {
+    push();
+    image(fruitArt, -width * 0.08, height * 0.08, width * 0.75, height * 0.75);
+    pop();
   }
 
-  // Center ornament
-  fill(200, 200, 255);
-  circle(0, 0, 30);
-  fill(255);
-  circle(0, 0, 15);
-  pop();
+  ls.end();
+}
+
+function drawCatLayer() {
+  ls.begin('Gamepad');
+  clear();
+
+  if (gamepadArt) {
+    push();
+    scale(0.5);
+    translate(width * 0.12, -height * 0.05);
+    image(gamepadArt, 0, 0);
+    pop();
+  }
 
   ls.end();
-
-  // Composite all layers to the main canvas
-  ls.render();
 }

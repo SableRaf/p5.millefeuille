@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Basic Layer System - p5.millefeuille</title>
+  <title>Thumbnail Cropping Showcase - p5.millefeuille</title>
   <link rel="stylesheet" href="styles.css">
   <script src="../../lib/p5.2.1.1.js"></script>
   <script src="../../dist/p5.millefeuille.js?v=0.1.0"></script>
@@ -11,8 +11,14 @@
 </head>
 <body>
   <div class="info">
-    <p>Use the <strong>Layer Panel</strong> to control visibility, opacity, and blend modes</p>
-    <p>Stickers by <a href="https://openstickers.craftwork.design/">openstickers</a></p>
+    <h1>Thumbnail Cropping Showcase</h1>
+    <p>
+      Watch the Layer Panel crop thumbnails to the animated content.
+    </p>
+    <p>
+      The UI looks for the smallest area that contains non-transparent pixels, adds a tiny safety margin,
+      and remembers the last few frames so the crop does not wobble. 
+    </p>
   </div>
 </body>
 </html>

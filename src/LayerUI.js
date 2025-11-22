@@ -1,4 +1,5 @@
 import { BlendModes } from './constants.js';
+import { computeAlphaBounds, mergeBounds, padBounds } from './utils/alphaBounds.js';
 
 /**
  * LayerUI - A visual panel for displaying and controlling layers
@@ -11,11 +12,17 @@ export class LayerUI {
   constructor(layerSystem, options = {}) {
     this.layerSystem = layerSystem;
     this.options = {
+      ...options,
       position: options.position || 'top-right',
       width: options.width || 280,
       collapsible: options.collapsible !== false,
       draggable: options.draggable !== false,
-      ...options
+      thumbnailPadding: options.thumbnailPadding ?? 4,
+      thumbnailSampleMaxSize: options.thumbnailSampleMaxSize ?? 196,
+      thumbnailAlphaThreshold: options.thumbnailAlphaThreshold ?? 12,
+      thumbnailAnimationWindow: options.thumbnailAnimationWindow ?? 6,
+      thumbnailEmptyFrameReset: options.thumbnailEmptyFrameReset ?? 6,
+      thumbnailSampleStride: options.thumbnailSampleStride ?? 1
     };
 
     this.isCollapsed = false;
@@ -29,6 +36,11 @@ export class LayerUI {
     this._cancelThumbnailFlush = null;
     this._thumbnailBatchSize = 1;
     this._thumbnailIdleBudgetMs = 8;
+    this._thumbnailScratchCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+    this._thumbnailScratchCtx = this._thumbnailScratchCanvas ? this._thumbnailScratchCanvas.getContext('2d') : null;
+    if (this._thumbnailScratchCtx) {
+      this._thumbnailScratchCtx.imageSmoothingEnabled = false;
+    }
 
     this._createUI();
     this._attachStyles();
@@ -433,31 +445,21 @@ export class LayerUI {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const cacheEntry = this._thumbnailCache.get(layerId) || { image: null };
-    const needsCapture = this._captureNeeded.has(layerId) || !cacheEntry.image;
+    if (!ctx) {
+      return;
+    }
+
+    const cacheEntry = this._getOrCreateThumbnailCacheEntry(layerId);
     let sourceCanvas = cacheEntry.image && cacheEntry.image.canvas ? cacheEntry.image.canvas : null;
+    const needsCapture = this._captureNeeded.has(layerId) || !sourceCanvas;
 
     if (needsCapture) {
-      const source = layer.framebuffer;
-      if (!source) return;
-
-      try {
-        let imageData;
-
-        if (typeof source.get === 'function') {
-          imageData = source.get();
-        } else if (source.canvas) {
-          imageData = source;
-        }
-
-        if (imageData && imageData.canvas) {
-          cacheEntry.image = imageData;
-          this._thumbnailCache.set(layerId, cacheEntry);
-          this._captureNeeded.delete(layerId);
-          sourceCanvas = imageData.canvas;
-        }
-      } catch (e) {
-        console.debug('Could not capture thumbnail:', e);
+      const captured = this._captureLayerImage(layer);
+      if (captured && captured.canvas) {
+        cacheEntry.image = captured;
+        sourceCanvas = captured.canvas;
+        cacheEntry.boundsDirty = true;
+        this._captureNeeded.delete(layerId);
       }
     }
 
@@ -465,17 +467,187 @@ export class LayerUI {
       return;
     }
 
-    // Clear and redraw checkerboard
+    const previousSize = cacheEntry.lastSourceSize;
+    if (!previousSize || previousSize.width !== sourceCanvas.width || previousSize.height !== sourceCanvas.height) {
+      cacheEntry.window = [];
+    }
+    cacheEntry.lastSourceSize = { width: sourceCanvas.width, height: sourceCanvas.height };
+
+    if (this._thumbnailScratchCtx && (cacheEntry.boundsDirty || !cacheEntry.drawBounds)) {
+      const rawBounds = this._calculateBoundsFromCanvas(sourceCanvas);
+      this._applyBoundsToCache(cacheEntry, rawBounds, sourceCanvas);
+      cacheEntry.boundsDirty = false;
+    } else if (!cacheEntry.drawBounds) {
+      cacheEntry.drawBounds = this._createFullBounds(sourceCanvas);
+      cacheEntry.boundsDirty = false;
+    }
+
     this._drawCheckerboard(ctx, canvas.width, canvas.height);
+    const drawBounds = cacheEntry.drawBounds || this._createFullBounds(sourceCanvas);
+    this._drawThumbnailImage(ctx, canvas, sourceCanvas, drawBounds);
+  }
 
-    // Calculate aspect-fit scaling
-    const scale = Math.min(canvas.width / sourceCanvas.width, canvas.height / sourceCanvas.height);
-    const scaledWidth = sourceCanvas.width * scale;
-    const scaledHeight = sourceCanvas.height * scale;
-    const x = (canvas.width - scaledWidth) / 2;
-    const y = (canvas.height - scaledHeight) / 2;
+  _getOrCreateThumbnailCacheEntry(layerId) {
+    if (!this._thumbnailCache.has(layerId)) {
+      this._thumbnailCache.set(layerId, {
+        image: null,
+        boundsDirty: false,
+        window: [],
+        emptyFrames: 0,
+        drawBounds: null,
+        lastSourceSize: null
+      });
+    }
+    return this._thumbnailCache.get(layerId);
+  }
 
-    ctx.drawImage(sourceCanvas, x, y, scaledWidth, scaledHeight);
+  _captureLayerImage(layer) {
+    const source = layer.framebuffer;
+    if (!source) {
+      return null;
+    }
+
+    try {
+      if (typeof source.get === 'function') {
+        return source.get();
+      }
+      if (source.canvas) {
+        return source;
+      }
+    } catch (e) {
+      console.debug('Could not capture thumbnail:', e);
+    }
+    return null;
+  }
+
+  _calculateBoundsFromCanvas(sourceCanvas) {
+    if (!this._thumbnailScratchCtx || !sourceCanvas.width || !sourceCanvas.height) {
+      return null;
+    }
+
+    const maxSize = Math.max(1, this.options.thumbnailSampleMaxSize);
+    const largestSide = Math.max(sourceCanvas.width, sourceCanvas.height);
+    const scale = largestSide > maxSize ? maxSize / largestSide : 1;
+    const sampleWidth = Math.max(1, Math.round(sourceCanvas.width * scale));
+    const sampleHeight = Math.max(1, Math.round(sourceCanvas.height * scale));
+
+    this._thumbnailScratchCanvas.width = sampleWidth;
+    this._thumbnailScratchCanvas.height = sampleHeight;
+
+    const ctx = this._thumbnailScratchCtx;
+    ctx.clearRect(0, 0, sampleWidth, sampleHeight);
+    ctx.drawImage(sourceCanvas, 0, 0, sampleWidth, sampleHeight);
+
+    let imageData;
+    try {
+      imageData = ctx.getImageData(0, 0, sampleWidth, sampleHeight);
+    } catch (e) {
+      console.debug('Could not read thumbnail buffer:', e);
+      return null;
+    }
+
+    const bounds = computeAlphaBounds(imageData.data, sampleWidth, sampleHeight, {
+      alphaThreshold: this.options.thumbnailAlphaThreshold,
+      stride: this.options.thumbnailSampleStride
+    });
+
+    if (!bounds) {
+      return null;
+    }
+
+    const scaleX = sourceCanvas.width / sampleWidth;
+    const scaleY = sourceCanvas.height / sampleHeight;
+    return {
+      x: bounds.x * scaleX,
+      y: bounds.y * scaleY,
+      width: bounds.width * scaleX,
+      height: bounds.height * scaleY
+    };
+  }
+
+  _applyBoundsToCache(cacheEntry, bounds, sourceSize) {
+    if (!cacheEntry) {
+      return;
+    }
+
+    if (!cacheEntry.window) {
+      cacheEntry.window = [];
+    }
+
+    if (bounds) {
+      cacheEntry.window.push(bounds);
+      const maxWindow = Math.max(1, this.options.thumbnailAnimationWindow || 0);
+      while (cacheEntry.window.length > maxWindow) {
+        cacheEntry.window.shift();
+      }
+      cacheEntry.emptyFrames = 0;
+    } else {
+      const resetLimit = Math.max(1, this.options.thumbnailEmptyFrameReset || 0);
+      cacheEntry.emptyFrames = (cacheEntry.emptyFrames || 0) + 1;
+      if (cacheEntry.emptyFrames >= resetLimit) {
+        cacheEntry.window = [];
+        cacheEntry.emptyFrames = resetLimit;
+      }
+    }
+
+    const merged = mergeBounds(cacheEntry.window);
+    const padded = merged
+      ? padBounds(merged, this.options.thumbnailPadding, sourceSize.width, sourceSize.height)
+      : null;
+
+    if (padded && padded.width > 0 && padded.height > 0) {
+      cacheEntry.drawBounds = padded;
+    } else if (!cacheEntry.drawBounds) {
+      cacheEntry.drawBounds = this._createFullBounds(sourceSize);
+    }
+
+    if (!cacheEntry.window.length) {
+      cacheEntry.drawBounds = this._createFullBounds(sourceSize);
+    }
+  }
+
+  _createFullBounds(sourceSize) {
+    const width = sourceSize.width || 0;
+    const height = sourceSize.height || 0;
+    return { x: 0, y: 0, width, height };
+  }
+
+  _drawThumbnailImage(ctx, targetCanvas, sourceCanvas, bounds) {
+    if (!bounds || bounds.width <= 0 || bounds.height <= 0) {
+      return;
+    }
+
+    const sourceWidth = sourceCanvas.width || 1;
+    const sourceHeight = sourceCanvas.height || 1;
+    const uniformScale = Math.min(
+      targetCanvas.width / sourceWidth,
+      targetCanvas.height / sourceHeight
+    );
+
+    const scaledSourceWidth = sourceWidth * uniformScale;
+    const scaledSourceHeight = sourceHeight * uniformScale;
+    const offsetX = (targetCanvas.width - scaledSourceWidth) / 2;
+    const offsetY = (targetCanvas.height - scaledSourceHeight) / 2;
+
+    const destWidth = Math.max(1, bounds.width * uniformScale);
+    const destHeight = Math.max(1, bounds.height * uniformScale);
+    const destX = offsetX + bounds.x * uniformScale;
+    const destY = offsetY + bounds.y * uniformScale;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(
+      sourceCanvas,
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height,
+      destX,
+      destY,
+      destWidth,
+      destHeight
+    );
+    ctx.restore();
   }
 
   /**
@@ -1156,5 +1328,7 @@ export class LayerUI {
     this._thumbnailCache.clear();
     this._thumbnailFlushHandle = null;
     this._cancelThumbnailFlush = null;
+    this._thumbnailScratchCanvas = null;
+    this._thumbnailScratchCtx = null;
   }
 }

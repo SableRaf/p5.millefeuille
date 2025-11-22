@@ -14,14 +14,25 @@ if (typeof global.cancelIdleCallback !== 'function') {
 
 const CanvasCtor = global.HTMLCanvasElement || (global.window && global.window.HTMLCanvasElement);
 if (CanvasCtor) {
-  CanvasCtor.prototype.getContext = () => ({
-    fillRect: () => {},
-    drawImage: () => {},
-    clearRect: () => {},
-    beginPath: () => {},
-    closePath: () => {},
-    fillStyle: ''
-  });
+  CanvasCtor.prototype.getContext = function () {
+    const canvas = this;
+    return {
+      canvas,
+      fillStyle: '',
+      strokeStyle: '',
+      imageSmoothingEnabled: false,
+      fillRect: () => {},
+      drawImage: () => {},
+      clearRect: () => {},
+      beginPath: () => {},
+      closePath: () => {},
+      save: () => {},
+      restore: () => {},
+      getImageData: () => ({
+        data: new Uint8ClampedArray((canvas.width || 1) * (canvas.height || 1) * 4)
+      })
+    };
+  };
 }
 
 if (typeof global.WebGLRenderingContext === 'undefined') {
