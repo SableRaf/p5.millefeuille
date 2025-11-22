@@ -2,6 +2,7 @@
 
 **Date:** November 21, 2025  
 **Objective:** Convert p5.millefeuille from a factory-pattern library to a proper p5.js addon library using `p5.registerAddon()`.
+**Status:** Implemented. Needs review and testing.
 
 ---
 
