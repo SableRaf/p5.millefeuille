@@ -19,9 +19,7 @@
 
 ### Via CDN (Script Tag)
 
-```html
-<script src="https://unpkg.com/p5.millefeuille@0.1.0/dist/p5.millefeuille.min.js"></script>
-```
+TBD
 
 ### Via npm
 
