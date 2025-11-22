@@ -502,19 +502,7 @@ export class LayerUI {
 
     // Simple: compute a single scalar for "how cropped" this layer is
     // Use the merged, padded drawBounds so cropAmount tracks the smoothed window.
-    const rawCropAmount = this._getCropAmount(sourceCanvas, drawBounds);
-
-    // Smooth cropAmount over time per layer to make checkerboard scale changes
-    // feel fluid rather than popping between discrete sizes.
-    const alpha = 0.25; // higher = more responsive, lower = smoother
-    if (cacheEntry.smoothedCropAmount == null) {
-      cacheEntry.smoothedCropAmount = rawCropAmount;
-    } else {
-      cacheEntry.smoothedCropAmount =
-        cacheEntry.smoothedCropAmount * (1 - alpha) + rawCropAmount * alpha;
-    }
-
-    const cropAmount = cacheEntry.smoothedCropAmount;
+    const cropAmount = this._getCropAmount(sourceCanvas, drawBounds);
     this._drawCheckerboard(ctx, canvas.width, canvas.height, cropAmount);
     this._drawThumbnailImage(ctx, canvas, sourceCanvas, drawBounds);
   }
@@ -527,8 +515,7 @@ export class LayerUI {
         window: [],
         emptyFrames: 0,
         drawBounds: null,
-        lastSourceSize: null,
-        smoothedCropAmount: null
+        lastSourceSize: null
       });
     }
     return this._thumbnailCache.get(layerId);
