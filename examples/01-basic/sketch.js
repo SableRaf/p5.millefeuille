@@ -1,8 +1,6 @@
-// No imports needed - library auto-registered via script tag
-
 let ls; // Layer system 
 
-window.setup = function() {
+function setup() {
   createCanvas(800, 600, WEBGL);
 
   // Create the layer system using the addon API
@@ -15,9 +13,9 @@ window.setup = function() {
 
   // Create the UI panel to control layers
   ls.createUI();
-};
+}
 
-window.draw = function() {
+function draw() {
   // Draw background layer - using string-based access
   ls.begin('Background');
   clear();
@@ -87,4 +85,4 @@ window.draw = function() {
 
   // Composite all layers to the main canvas
   ls.render();
-};
+}
