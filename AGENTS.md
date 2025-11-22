@@ -372,6 +372,12 @@ console.log(p5Instance._renderer.drawingContext);
 - Check draw calls in WebGL inspector
 - Monitor memory usage for framebuffer leaks
 
+### Screenshots & Visual Debugging
+Use playwrigth MCP to capture screenshots of layer compositions for visual debugging.
+
+### Documentation
+We are using p5.js 2.1.1 so refer to the latest documentation at https://beta.p5js.org/reference/. Until 2.x is the default, refer to the beta site.
+
 ## Related Resources
 
 - [p5.js Framebuffer Reference](https://p5js.org/reference/p5/createFramebuffer/)
