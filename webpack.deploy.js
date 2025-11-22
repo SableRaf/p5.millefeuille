@@ -48,6 +48,18 @@ module.exports = {
         return html;
       },
     }),
+    new HtmlWebpackPlugin({
+      template: './examples/03-thumbnail-cropping/index.html',
+      filename: '03-thumbnail-cropping/index.html',
+      inject: false,
+      templateContent: ({ htmlWebpackPlugin }) => {
+        const template = fs.readFileSync('./examples/03-thumbnail-cropping/index.html', 'utf-8');
+        const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
+        let html = template.replace(/\.\.\/(\.\.\/)??(dist|lib)\//g, '../lib/');
+        html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
+        return html;
+      },
+    }),
     new CopyWebpackPlugin({
       patterns: [
         {
@@ -77,6 +89,13 @@ module.exports = {
           },
         },
         {
+          from: 'examples/03-thumbnail-cropping',
+          to: '03-thumbnail-cropping',
+          globOptions: {
+            ignore: ['**/index.html', '**/sketch.js'],
+          },
+        },
+        {
           from: 'examples/01-basic/sketch.js',
           to: '01-basic/sketch.js',
           transform(content) {
@@ -86,6 +105,13 @@ module.exports = {
         {
           from: 'examples/02-blend-modes/sketch.js',
           to: '02-blend-modes/sketch.js',
+          transform(content) {
+            return content.toString().replace(/\.\.\/\.\.\/dist\//g, '../lib/');
+          },
+        },
+        {
+          from: 'examples/03-thumbnail-cropping/sketch.js',
+          to: '03-thumbnail-cropping/sketch.js',
           transform(content) {
             return content.toString().replace(/\.\.\/\.\.\/dist\//g, '../lib/');
           },
