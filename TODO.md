@@ -6,9 +6,10 @@
 - [x] Prevent moving the LayerUI panel offscreen
 - [x] Fix re-ordering of layers flipping y axis (see basic example)
 - [x] Fix re-ordering of layers causing other layers to disappear (see blend modes example)
+- [x] Turn into a p5.js library (see LIBRARY_PLAN.md for details)
 
 ## Ready for work
-- [x] Turn into a p5.js library (see LIBRARY_PLAN.md for details)
+- [ ] Publish p5.millefeuille to npm
 - [ ] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard
 
 ## Needs planning/research/discussion
