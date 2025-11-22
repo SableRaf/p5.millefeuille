@@ -5,26 +5,42 @@ let redGradient, greenGradient, blueGradient; // Gradient graphics
 let backgroundGraphic; // Background graphic
 
 // Helper function to create a gradient ellipse graphic
-function createGradientEllipse(fromColor, width, height) {
-  const g = createGraphics(width, height);
+function createGradientEllipse(fromColor, w, h, name='gradientEllipse') {
+
+  const canvas = createElement('canvas');
   
+  const g = createGraphics(w, h, canvas.elt);
+  
+  canvas.attribute('id', name);
+  canvas.attribute('class', 'p5.Graphics');
+  canvas.attribute('width', w);
+  canvas.attribute('height', h);
+
   // Create linear gradient using native Canvas API
   const ctx = g.drawingContext;
-  const gradient = ctx.createLinearGradient(0, height/2, width, height/2);
+  const gradient = ctx.createLinearGradient(0, h/2, w, h/2);
   gradient.addColorStop(0, `rgb(${fromColor[0]}, ${fromColor[1]}, ${fromColor[2]})`);
   gradient.addColorStop(1, 'rgb(255, 255, 255)');
   
   // Apply gradient and draw ellipse
   ctx.fillStyle = gradient;
   g.noStroke();
-  g.ellipse(width/2, height/2, width, height);
+  g.ellipse(w/2, h/2, w, h);
   
   return g;
 }
 
 // Helper function to create the background gradient
-function createBackgroundGradient(w, h) {
-  const g = createGraphics(w, h);
+function createBackgroundGradient(w, h, name='backgroundGradient') {
+
+  const canvas = createElement('canvas');
+
+  const g = createGraphics(w, h, canvas.elt);
+
+  canvas.attribute('id', name);
+  canvas.attribute('class', 'p5.Graphics');
+  canvas.attribute('width', w);
+  canvas.attribute('height', h);
   
   // Create a multi-color gradient background
   g.noStroke();
@@ -84,9 +100,9 @@ window.setup = function() {
   backgroundGraphic = createBackgroundGradient(600, 600);
 
   // Create gradient ellipse graphics (2D graphics buffers)
-  redGradient = createGradientEllipse([255, 0, 0], 200, 560);
-  greenGradient = createGradientEllipse([0, 255, 0], 200, 560);
-  blueGradient = createGradientEllipse([0, 0, 255], 200, 560);
+  redGradient = createGradientEllipse([255, 0, 0], 200, 560, 'redEllipse');
+  greenGradient = createGradientEllipse([0, 255, 0], 200, 560, 'greenEllipse');
+  blueGradient = createGradientEllipse([0, 0, 255], 200, 560, 'blueEllipse');
 
   // Create the layer system
   ls = createLayerSystem();
