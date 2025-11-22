@@ -1,0 +1,37 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top, #1e2749, #0c0f1b 70%);
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #f0f4ff;
+}
+
+canvas {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+}
+
+.info {
+  max-width: 640px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.info h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.info p {
+  margin: 0.35rem 0;
+  color: rgba(240, 244, 255, 0.85);
+}
