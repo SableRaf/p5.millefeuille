@@ -7,13 +7,13 @@
 - [x] Fix re-ordering of layers flipping y axis (see basic example)
 - [x] Fix re-ordering of layers causing other layers to disappear (see blend modes example)
 - [x] Turn into a p5.js library (see LIBRARY_PLAN.md for details)
+- [x] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard (DOM-swap + thumbnail queue landed 2025-11-22)
 
 ## Ready for work
-- [ ] Publish p5.millefeuille to npm
-- [x] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard (DOM-swap + thumbnail queue landed 2025-11-22)
-- [ ] Capture updated Chrome Performance trace for LayerUI arrow-key moves to confirm handler <16ms and archive screenshots
+- [x] Add tests for LayerSystem and LayerUI components using Jest and JSDOM
 
 ## Needs planning/research/discussion
+- [ ] Publish p5.millefeuille to npm
 - [ ] Make documentation website with examples and API reference (use JSDoc or similar)
 - [ ] Add `displayName` property to layers separate from ID & name
 - [ ] Add visual unit tests for all blend modes
