@@ -22,6 +22,13 @@ export class LayerUI {
     this.container = null;
     this.layerElements = new Map(); // layerId -> DOM element
     this.selectedLayerId = null; // Currently selected layer
+    this._dirtyThumbnailLayerIds = new Set();
+    this._captureNeeded = new Set();
+    this._thumbnailCache = new Map(); // layerId -> { image }
+    this._thumbnailFlushHandle = null;
+    this._cancelThumbnailFlush = null;
+    this._thumbnailBatchSize = 1;
+    this._thumbnailIdleBudgetMs = 8;
 
     this._createUI();
     this._attachStyles();
@@ -97,20 +104,26 @@ export class LayerUI {
 
     // Keyboard navigation for arrow keys
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        // Don't interfere if user is typing in an input field
-        if (e.target.matches('input, select, textarea')) {
-          return;
-        }
-
-        e.preventDefault();
-
-        if (e.key === 'ArrowUp') {
-          this._moveSelectedLayer(-1);
-        } else if (e.key === 'ArrowDown') {
-          this._moveSelectedLayer(1);
-        }
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+        return;
       }
+
+      if (e.repeat || this.selectedLayerId === null) {
+        return;
+      }
+
+      if (!this._isPanelVisible()) {
+        return;
+      }
+
+      // Don't interfere if user is typing in an input field
+      if (e.target.matches('input, select, textarea')) {
+        return;
+      }
+
+      e.preventDefault();
+
+      this._moveSelectedLayer(e.key === 'ArrowUp' ? -1 : 1);
     }, { signal });
   }
 
@@ -138,6 +151,17 @@ export class LayerUI {
 
     const pos = positions[this.options.position] || positions['top-right'];
     Object.assign(this.container.style, pos);
+  }
+
+  /**
+   * Determines if the panel is currently visible on screen
+   * @private
+   */
+  _isPanelVisible() {
+    if (!this.container || this.container.style.display === 'none') {
+      return false;
+    }
+    return this.container.getClientRects().length > 0;
   }
 
   /**
@@ -206,6 +230,8 @@ export class LayerUI {
   update() {
     const layers = this.layerSystem.getLayers();
 
+    this._pruneThumbnailState(layers);
+
     // Clear existing layer elements
     this.layersContainer.innerHTML = '';
     this.layerElements.clear();
@@ -219,8 +245,17 @@ export class LayerUI {
       this.layerElements.set(layer.id, layerEl);
     });
 
-    // Initial thumbnail render
-    this._updateThumbnails();
+    // Initial thumbnail render is scheduled lazily to avoid blocking
+    this._markThumbnailsDirty(reversedLayers.map(layer => layer.id), { needsCapture: true });
+  }
+
+  /**
+   * Public helper so the LayerSystem can schedule updates when layer content changes
+   * @param {number|string} layerId
+   * @param {{needsCapture?: boolean}} options
+   */
+  scheduleThumbnailUpdate(layerId, options = {}) {
+    this._markThumbnailsDirty([layerId], options);
   }
 
   /**
@@ -267,11 +302,120 @@ export class LayerUI {
    * Updates all thumbnails
    * @private
    */
-  _updateThumbnails() {
-    const layers = this.layerSystem.getLayers();
-    layers.forEach(layer => {
-      this._updateLayerThumbnail(layer.id);
+  _markThumbnailsDirty(layerIds = [], options = {}) {
+    const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
+    const needsCapture = !!options.needsCapture;
+    ids.forEach(id => {
+      if (id === null || id === undefined) {
+        return;
+      }
+      this._dirtyThumbnailLayerIds.add(id);
+      if (needsCapture) {
+        this._captureNeeded.add(id);
+      }
     });
+    this._scheduleThumbnailFlush();
+  }
+
+  /**
+   * Removes cached thumbnail data for layers that no longer exist
+   * @private
+   */
+  _pruneThumbnailState(activeLayers) {
+    const liveIds = new Set(activeLayers.map(layer => layer.id));
+
+    for (const id of Array.from(this._thumbnailCache.keys())) {
+      if (!liveIds.has(id)) {
+        this._thumbnailCache.delete(id);
+      }
+    }
+
+    for (const id of Array.from(this._captureNeeded)) {
+      if (!liveIds.has(id)) {
+        this._captureNeeded.delete(id);
+      }
+    }
+
+    for (const id of Array.from(this._dirtyThumbnailLayerIds)) {
+      if (!liveIds.has(id)) {
+        this._dirtyThumbnailLayerIds.delete(id);
+      }
+    }
+  }
+
+  /**
+   * Processes a small batch of dirty thumbnails on each animation frame
+   * @private
+   */
+  _flushDirtyThumbnails(deadline) {
+    if (this._dirtyThumbnailLayerIds.size === 0) {
+      return;
+    }
+
+    const hasPerformanceNow = typeof performance !== 'undefined' && typeof performance.now === 'function';
+    const start = hasPerformanceNow ? performance.now() : null;
+
+    const timeRemaining = (deadline && typeof deadline.timeRemaining === 'function')
+      ? () => deadline.timeRemaining()
+      : () => {
+        if (!hasPerformanceNow || start === null) {
+          return Number.POSITIVE_INFINITY;
+        }
+        const elapsed = performance.now() - start;
+        return Math.max(0, this._thumbnailIdleBudgetMs - elapsed);
+      };
+
+    const shouldYield = () => timeRemaining() <= 1;
+
+    let processed = 0;
+    while (this._dirtyThumbnailLayerIds.size > 0) {
+      if (processed >= this._thumbnailBatchSize) {
+        break;
+      }
+
+      const iterator = this._dirtyThumbnailLayerIds.values().next();
+      if (iterator.done) {
+        break;
+      }
+      const layerId = iterator.value;
+      this._dirtyThumbnailLayerIds.delete(layerId);
+      this._updateLayerThumbnail(layerId);
+      processed++;
+
+      if (shouldYield()) {
+        break;
+      }
+    }
+  }
+
+  /**
+   * Schedules a flush using requestIdleCallback/requestAnimationFrame fallback
+   * @private
+   */
+  _scheduleThumbnailFlush() {
+    if (this._thumbnailFlushHandle !== null || this._dirtyThumbnailLayerIds.size === 0) {
+      return;
+    }
+
+    const flushCallback = (deadline) => {
+      this._thumbnailFlushHandle = null;
+      this._cancelThumbnailFlush = null;
+      this._flushDirtyThumbnails(deadline);
+      if (this._dirtyThumbnailLayerIds.size > 0) {
+        this._scheduleThumbnailFlush();
+      }
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      this._thumbnailFlushHandle = window.requestIdleCallback(flushCallback);
+      this._cancelThumbnailFlush = (handle) => window.cancelIdleCallback(handle);
+    } else if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      this._thumbnailFlushHandle = window.requestAnimationFrame(() => flushCallback());
+      this._cancelThumbnailFlush = (handle) => window.cancelAnimationFrame(handle);
+    } else {
+      this._thumbnailFlushHandle = setTimeout(() => flushCallback(), 16);
+      this._cancelThumbnailFlush = (handle) => clearTimeout(handle);
+    }
   }
 
   /**
@@ -289,38 +433,49 @@ export class LayerUI {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const source = layer.framebuffer;
+    const cacheEntry = this._thumbnailCache.get(layerId) || { image: null };
+    const needsCapture = this._captureNeeded.has(layerId) || !cacheEntry.image;
+    let sourceCanvas = cacheEntry.image && cacheEntry.image.canvas ? cacheEntry.image.canvas : null;
 
-    if (!source) return;
+    if (needsCapture) {
+      const source = layer.framebuffer;
+      if (!source) return;
 
-    try {
-      // Clear and redraw checkerboard
-      this._drawCheckerboard(ctx, canvas.width, canvas.height);
+      try {
+        let imageData;
 
-      // Get framebuffer content as a p5.Image using the get() method
-      let imageData;
+        if (typeof source.get === 'function') {
+          imageData = source.get();
+        } else if (source.canvas) {
+          imageData = source;
+        }
 
-      if (typeof source.get === 'function') {
-        imageData = source.get();
-      } else if (source.canvas) {
-        imageData = source;
+        if (imageData && imageData.canvas) {
+          cacheEntry.image = imageData;
+          this._thumbnailCache.set(layerId, cacheEntry);
+          this._captureNeeded.delete(layerId);
+          sourceCanvas = imageData.canvas;
+        }
+      } catch (e) {
+        console.debug('Could not capture thumbnail:', e);
       }
-
-      if (imageData && imageData.canvas) {
-        const sourceCanvas = imageData.canvas;
-
-        // Calculate aspect-fit scaling
-        const scale = Math.min(canvas.width / sourceCanvas.width, canvas.height / sourceCanvas.height);
-        const scaledWidth = sourceCanvas.width * scale;
-        const scaledHeight = sourceCanvas.height * scale;
-        const x = (canvas.width - scaledWidth) / 2;
-        const y = (canvas.height - scaledHeight) / 2;
-
-        ctx.drawImage(sourceCanvas, x, y, scaledWidth, scaledHeight);
-      }
-    } catch (e) {
-      console.debug('Could not render thumbnail:', e);
     }
+
+    if (!sourceCanvas) {
+      return;
+    }
+
+    // Clear and redraw checkerboard
+    this._drawCheckerboard(ctx, canvas.width, canvas.height);
+
+    // Calculate aspect-fit scaling
+    const scale = Math.min(canvas.width / sourceCanvas.width, canvas.height / sourceCanvas.height);
+    const scaledWidth = sourceCanvas.width * scale;
+    const scaledHeight = sourceCanvas.height * scale;
+    const x = (canvas.width - scaledWidth) / 2;
+    const y = (canvas.height - scaledHeight) / 2;
+
+    ctx.drawImage(sourceCanvas, x, y, scaledWidth, scaledHeight);
   }
 
   /**
@@ -556,9 +711,6 @@ export class LayerUI {
   _selectLayer(layerId) {
     this.selectedLayerId = layerId;
 
-    // Debug: Log selected layer info
-    const layer = this.layerSystem.getLayers().find(l => l.id === layerId);
-
     // Update visual selection state
     const elements = document.querySelectorAll('.p5ml-layer-item');
 
@@ -616,19 +768,32 @@ export class LayerUI {
     if (newIndex < 0 || newIndex >= layers.length) return;
 
     // Swap layers
-    const temp = layers[currentIndex];
-    layers[currentIndex] = layers[newIndex];
-    layers[newIndex] = temp;
+    const targetLayer = layers[newIndex];
+
+    // Swap entries inside the layer array
+    [layers[currentIndex], layers[newIndex]] = [layers[newIndex], layers[currentIndex]];
+
+    // Move only the affected DOM nodes instead of rebuilding the entire list
+    const selectedElement = this.layerElements.get(this.selectedLayerId);
+    const targetElement = this.layerElements.get(targetLayer.id);
+    if (selectedElement && targetElement && this.layersContainer) {
+      if (direction === -1) {
+        this.layersContainer.insertBefore(selectedElement, targetElement);
+      } else {
+        const nextNode = targetElement.nextSibling;
+        this.layersContainer.insertBefore(selectedElement, nextNode);
+      }
+    }
+
+    // Only the swapped layers need their thumbnails refreshed
+    this._markThumbnailsDirty([this.selectedLayerId, targetLayer.id]);
 
     // Update the layer system's internal order
     if (typeof this.layerSystem.reorderLayers === 'function') {
       this.layerSystem.reorderLayers(layers);
     }
 
-    // Refresh the UI to reflect new order
-    this.update();
-
-    // Re-select the layer after update
+    // Re-select the layer to keep the highlight consistent
     this._selectLayer(this.selectedLayerId);
   }
 
@@ -982,5 +1147,14 @@ export class LayerUI {
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
+
+    if (this._cancelThumbnailFlush && this._thumbnailFlushHandle !== null) {
+      this._cancelThumbnailFlush(this._thumbnailFlushHandle);
+    }
+    this._dirtyThumbnailLayerIds.clear();
+    this._captureNeeded.clear();
+    this._thumbnailCache.clear();
+    this._thumbnailFlushHandle = null;
+    this._cancelThumbnailFlush = null;
   }
 }

@@ -175,12 +175,10 @@ export class LayerSystem {
 
     const layer = this.layers.get(this.activeLayerId);
     if (layer) {
-      const wasFirstDraw = !layer.hasBeenDrawnTo;
       layer.end();
-      
-      // Update UI thumbnail after first draw
-      if (wasFirstDraw && this.ui) {
-        this.ui._updateLayerThumbnail(layer.id);
+
+      if (this.ui && typeof this.ui.scheduleThumbnailUpdate === 'function') {
+        this.ui.scheduleThumbnailUpdate(layer.id, { needsCapture: true });
       }
     }
 
@@ -284,11 +282,6 @@ export class LayerSystem {
     orderedLayers.forEach((layer, index) => {
       layer.setZIndex(index);
     });
-
-    // Update UI if it exists
-    if (this.ui) {
-      this.ui.update();
-    }
   }
 
   /**

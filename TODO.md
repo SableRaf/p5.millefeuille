@@ -10,7 +10,8 @@
 
 ## Ready for work
 - [ ] Publish p5.millefeuille to npm
-- [ ] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard
+- [x] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard (DOM-swap + thumbnail queue landed 2025-11-22)
+- [ ] Capture updated Chrome Performance trace for LayerUI arrow-key moves to confirm handler <16ms and archive screenshots
 
 ## Needs planning/research/discussion
 - [ ] Make documentation website with examples and API reference (use JSDoc or similar)
