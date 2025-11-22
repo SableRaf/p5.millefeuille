@@ -42,6 +42,22 @@ export class LayerUI {
       this._thumbnailScratchCtx.imageSmoothingEnabled = false;
     }
 
+    this._checkerPatternCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+    this._checkerPatternCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+    if (this._checkerPatternCanvas) {
+      const size = 8;
+      this._checkerPatternCanvas.width = size;
+      this._checkerPatternCanvas.height = size;
+      const checkerCtx = this._checkerPatternCanvas.getContext('2d');
+      if (checkerCtx) {
+        checkerCtx.fillStyle = '#333';
+        checkerCtx.fillRect(0, 0, size, size);
+        checkerCtx.fillStyle = '#444';
+        checkerCtx.fillRect(0, 0, size / 2, size / 2);
+        checkerCtx.fillRect(size / 2, size / 2, size / 2, size / 2);
+      }
+    }
+
     this._createUI();
     this._attachStyles();
   }
@@ -486,7 +502,19 @@ export class LayerUI {
 
     // Simple: compute a single scalar for "how cropped" this layer is
     // Use the merged, padded drawBounds so cropAmount tracks the smoothed window.
-    const cropAmount = this._getCropAmount(sourceCanvas, drawBounds);
+    const rawCropAmount = this._getCropAmount(sourceCanvas, drawBounds);
+
+    // Smooth cropAmount over time per layer to make checkerboard scale changes
+    // feel fluid rather than popping between discrete sizes.
+    const alpha = 0.25; // higher = more responsive, lower = smoother
+    if (cacheEntry.smoothedCropAmount == null) {
+      cacheEntry.smoothedCropAmount = rawCropAmount;
+    } else {
+      cacheEntry.smoothedCropAmount =
+        cacheEntry.smoothedCropAmount * (1 - alpha) + rawCropAmount * alpha;
+    }
+
+    const cropAmount = cacheEntry.smoothedCropAmount;
     this._drawCheckerboard(ctx, canvas.width, canvas.height, cropAmount);
     this._drawThumbnailImage(ctx, canvas, sourceCanvas, drawBounds);
   }
@@ -499,7 +527,8 @@ export class LayerUI {
         window: [],
         emptyFrames: 0,
         drawBounds: null,
-        lastSourceSize: null
+        lastSourceSize: null,
+        smoothedCropAmount: null
       });
     }
     return this._thumbnailCache.get(layerId);
@@ -639,19 +668,6 @@ export class LayerUI {
     // Invert so that smaller visible fraction => larger crop amount
     const cropAmount = 1 - visibleFraction;
     return cropAmount;
-  }
-
-  _getCheckerboardSquareSize(cropAmount = 0) {
-    const t = Math.max(0, Math.min(1, Number.isFinite(cropAmount) ? cropAmount : 0));
-
-    // When t = 0 (no crop) => fine grid; when t = 1 => big tiles
-    const minSize = 4;
-    const maxSize = 14;
-    const size = minSize + (maxSize - minSize) * t;
-
-    // Quantize to even integers for stability
-    const quantized = Math.round(size / 2) * 2;
-    return Math.max(minSize, Math.min(maxSize, quantized));
   }
 
   _drawThumbnailImage(ctx, targetCanvas, sourceCanvas, bounds) {
@@ -897,8 +913,26 @@ export class LayerUI {
    * Draws a checkerboard pattern for transparency background
    * @private
    */
-  _drawCheckerboard(ctx, width, height, zoomScale = 1) {
-    const squareSize = this._getCheckerboardSquareSize(zoomScale);
+  _drawCheckerboard(ctx, width, height, cropAmount = 0) {
+    if (!ctx) {
+      return;
+    }
+
+    const pattern = this._getCheckerPattern(ctx);
+    const scale = this._getCheckerboardScale(cropAmount);
+
+    if (pattern && typeof ctx.save === 'function' && typeof ctx.scale === 'function') {
+      ctx.save();
+      ctx.fillStyle = pattern;
+      ctx.scale(scale, scale);
+      ctx.fillRect(0, 0, width / scale, height / scale);
+      ctx.restore();
+      return;
+    }
+
+    // Fallback: discrete checkerboard (used in tests/mocks without pattern support)
+    const baseSize = 8;
+    const squareSize = Math.max(2, Math.round(baseSize * scale));
     ctx.fillStyle = '#333';
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = '#444';
@@ -910,6 +944,29 @@ export class LayerUI {
         }
       }
     }
+  }
+
+  _getCheckerPattern(ctx) {
+    if (!ctx || !this._checkerPatternCanvas || typeof ctx.createPattern !== 'function') {
+      return null;
+    }
+
+    if (this._checkerPatternCache && this._checkerPatternCache.has(ctx)) {
+      return this._checkerPatternCache.get(ctx);
+    }
+
+    const pattern = ctx.createPattern(this._checkerPatternCanvas, 'repeat');
+    if (pattern && this._checkerPatternCache) {
+      this._checkerPatternCache.set(ctx, pattern);
+    }
+    return pattern;
+  }
+
+  _getCheckerboardScale(cropAmount = 0) {
+    const t = Math.max(0, Math.min(1, Number.isFinite(cropAmount) ? cropAmount : 0));
+    const minScale = 0.6;
+    const maxScale = 2.2;
+    return minScale + (maxScale - minScale) * t;
   }
 
   /**

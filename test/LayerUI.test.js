@@ -134,17 +134,17 @@ describe('LayerUI', () => {
     ui.dispose();
   });
 
-  test('checkerboard square size grows with cropAmount', () => {
+  test('checkerboard scale grows with cropAmount', () => {
     const p5 = createP5Stub();
     const system = new LayerSystem(p5);
     const ui = system.createUI();
 
-    const noCropSize = ui._getCheckerboardSquareSize(0);
-    const slightlyCroppedSize = ui._getCheckerboardSquareSize(0.3);
-    const heavilyCroppedSize = ui._getCheckerboardSquareSize(0.8);
+    const scaleNoCrop = ui._getCheckerboardScale(0);
+    const scaleMid = ui._getCheckerboardScale(0.3);
+    const scaleHigh = ui._getCheckerboardScale(0.8);
 
-    expect(slightlyCroppedSize).toBeGreaterThanOrEqual(noCropSize);
-    expect(heavilyCroppedSize).toBeGreaterThan(slightlyCroppedSize);
+    expect(scaleMid).toBeGreaterThan(scaleNoCrop);
+    expect(scaleHigh).toBeGreaterThan(scaleMid);
 
     ui.dispose();
   });
