@@ -34,7 +34,6 @@ function drawBackdropLayer() {
 
   if (flowerArt) {
     push();
-    tint(255, 180);
     image(flowerArt, 0, 0, width * 0.95, height * 0.95);
     pop();
   }
@@ -48,7 +47,9 @@ function drawProduceLayer() {
 
   if (fruitArt) {
     push();
-    image(fruitArt, -width * 0.08, height * 0.08, width * 0.75, height * 0.75);
+    translate(-width * 0.2, height * 0.08,);
+    scale(0.36);
+    image(fruitArt, 0, 0);
     pop();
   }
 
@@ -61,8 +62,8 @@ function drawCatLayer() {
 
   if (gamepadArt) {
     push();
-    scale(0.5);
-    translate(width * 0.12, -height * 0.05);
+    translate(width * 0.2, -height * 0.2);
+    scale(0.3);
     image(gamepadArt, 0, 0);
     pop();
   }
