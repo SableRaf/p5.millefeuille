@@ -482,8 +482,12 @@ export class LayerUI {
       cacheEntry.boundsDirty = false;
     }
 
-    this._drawCheckerboard(ctx, canvas.width, canvas.height);
     const drawBounds = cacheEntry.drawBounds || this._createFullBounds(sourceCanvas);
+
+    // Simple: compute a single scalar for "how cropped" this layer is
+    // Use the merged, padded drawBounds so cropAmount tracks the smoothed window.
+    const cropAmount = this._getCropAmount(sourceCanvas, drawBounds);
+    this._drawCheckerboard(ctx, canvas.width, canvas.height, cropAmount);
     this._drawThumbnailImage(ctx, canvas, sourceCanvas, drawBounds);
   }
 
@@ -612,18 +616,57 @@ export class LayerUI {
     return { x: 0, y: 0, width, height };
   }
 
+  /**
+   * Returns a simple scalar in [0, 1] representing how tight the crop is.
+   * 0   => no crop (full layer)
+   * 1   => extremely tight crop (tiny region)
+   */
+  _getCropAmount(sourceCanvas, bounds) {
+    if (!sourceCanvas || !bounds || bounds.width <= 0 || bounds.height <= 0) {
+      return 0;
+    }
+
+    const layerWidth = sourceCanvas.width || 1;
+    const layerHeight = sourceCanvas.height || 1;
+
+    const areaLayer = layerWidth * layerHeight;
+    const areaCrop = bounds.width * bounds.height;
+    if (!Number.isFinite(areaLayer) || areaLayer <= 0) {
+      return 0;
+    }
+
+    const visibleFraction = Math.max(0, Math.min(1, areaCrop / areaLayer));
+    // Invert so that smaller visible fraction => larger crop amount
+    const cropAmount = 1 - visibleFraction;
+    return cropAmount;
+  }
+
+  _getCheckerboardSquareSize(cropAmount = 0) {
+    const t = Math.max(0, Math.min(1, Number.isFinite(cropAmount) ? cropAmount : 0));
+
+    // When t = 0 (no crop) => fine grid; when t = 1 => big tiles
+    const minSize = 4;
+    const maxSize = 14;
+    const size = minSize + (maxSize - minSize) * t;
+
+    // Quantize to even integers for stability
+    const quantized = Math.round(size / 2) * 2;
+    return Math.max(minSize, Math.min(maxSize, quantized));
+  }
+
   _drawThumbnailImage(ctx, targetCanvas, sourceCanvas, bounds) {
     if (!bounds || bounds.width <= 0 || bounds.height <= 0) {
       return;
     }
 
-    const zoomScale = Math.min(
+    // Always fit the cropped region into the thumbnail while preserving aspect
+    const scale = Math.min(
       targetCanvas.width / bounds.width,
       targetCanvas.height / bounds.height
     );
 
-    const destWidth = Math.max(1, bounds.width * zoomScale);
-    const destHeight = Math.max(1, bounds.height * zoomScale);
+    const destWidth = Math.max(1, bounds.width * scale);
+    const destHeight = Math.max(1, bounds.height * scale);
     const destX = (targetCanvas.width - destWidth) / 2;
     const destY = (targetCanvas.height - destHeight) / 2;
 
@@ -854,8 +897,8 @@ export class LayerUI {
    * Draws a checkerboard pattern for transparency background
    * @private
    */
-  _drawCheckerboard(ctx, width, height) {
-    const squareSize = 4;
+  _drawCheckerboard(ctx, width, height, zoomScale = 1) {
+    const squareSize = this._getCheckerboardSquareSize(zoomScale);
     ctx.fillStyle = '#333';
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = '#444';

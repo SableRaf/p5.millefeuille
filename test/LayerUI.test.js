@@ -116,4 +116,36 @@ describe('LayerUI', () => {
 
     ui.dispose();
   });
+
+  test('cropAmount grows as crop gets tighter', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const ui = system.createUI();
+
+    const sourceCanvas = { width: 200, height: 200 };
+    const looseBounds = { width: 180, height: 180 };
+    const tightBounds = { width: 40, height: 40 };
+
+    const amountLoose = ui._getCropAmount(sourceCanvas, looseBounds);
+    const amountTight = ui._getCropAmount(sourceCanvas, tightBounds);
+
+    expect(amountTight).toBeGreaterThan(amountLoose);
+
+    ui.dispose();
+  });
+
+  test('checkerboard square size grows with cropAmount', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const ui = system.createUI();
+
+    const noCropSize = ui._getCheckerboardSquareSize(0);
+    const slightlyCroppedSize = ui._getCheckerboardSquareSize(0.3);
+    const heavilyCroppedSize = ui._getCheckerboardSquareSize(0.8);
+
+    expect(slightlyCroppedSize).toBeGreaterThanOrEqual(noCropSize);
+    expect(heavilyCroppedSize).toBeGreaterThan(slightlyCroppedSize);
+
+    ui.dispose();
+  });
 });
