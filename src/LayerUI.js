@@ -956,7 +956,7 @@ export class LayerUI {
 
   _getCheckerboardScale(cropAmount = 0) {
     const t = Math.max(0, Math.min(1, Number.isFinite(cropAmount) ? cropAmount : 0));
-    const minScale = 0.6;
+    const minScale = 1.0;
     const maxScale = 2.2;
     return minScale + (maxScale - minScale) * t;
   }
