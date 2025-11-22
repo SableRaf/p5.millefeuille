@@ -415,34 +415,3 @@ export class LayerSystem {
     this.compositor.dispose();
   }
 }
-
-/**
- * Factory function to create a new LayerSystem
- * @param {p5} p5Instance - The p5.js instance (optional in global mode, auto-detected)
- * @returns {LayerSystem} A new LayerSystem instance
- */
-export function createLayerSystem(p5Instance) {
-  let p = p5Instance;
-
-  // If no instance provided or window was passed, try to detect global p5
-  if (!p || p === window) {
-    // In global mode, p5 stores the instance in window.p5.instance
-    if (typeof window !== 'undefined' && window.p5 && window.p5.instance) {
-      p = window.p5.instance;
-    } else if (typeof window !== 'undefined' && window._renderer) {
-      // Fallback: p5 is in global mode, use window as the instance
-      p = window;
-    } else if (typeof window !== 'undefined' && typeof window.createCanvas === 'function') {
-      // p5 global mode, but canvas not created yet - use window
-      p = window;
-    } else {
-      throw new Error('p5.js instance not found. Make sure p5.js is loaded and createCanvas() has been called.');
-    }
-  }
-
-  if (!p) {
-    throw new Error('p5.js instance not found. Pass the p5 instance to createLayerSystem()');
-  }
-
-  return new LayerSystem(p);
-}

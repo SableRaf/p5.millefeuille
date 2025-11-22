@@ -7,57 +7,62 @@
 ## Features
 
 - **Layer Management**: Create, remove, and reorder layers with ease
-- **Blend Modes**: NORMAL, MULTIPLY, SCREEN, ADD, SUBTRACT
+- **14 Blend Modes**: Normal, Multiply, Screen, Add, Subtract, Overlay, Soft Light, Hard Light, Color Dodge, Color Burn, Darken, Lighten, Difference, Exclusion
 - **Layer Properties**: Control visibility, opacity, and z-index
 - **Masking**: Apply grayscale masks to layers for selective revealing
-- **Performance**: Optimized single-pass compositing using WebGL
+- **Performance**: Optimized shader-based compositing using WebGL
 - **Auto-resize**: Automatically handles canvas size changes
 - **Clean API**: Inspired by Photoshop but designed for creative coding
+- **Instance Mode**: Works in both global and instance modes
 
 ## Installation
 
-### npm
+### Via CDN (Script Tag)
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.1.1/p5.min.js"></script>
+<script src="https://unpkg.com/p5.millefeuille@0.1.0/dist/p5.millefeuille.min.js"></script>
+```
+
+### Via npm
 
 ```bash
 npm install p5.millefeuille
 ```
 
-### CDN
+Then in your code:
 
-```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.1.1/p5.min.js"></script>
-<script type="module">
-  import { createLayerSystem, BlendModes } from 'https://unpkg.com/p5.millefeuille/dist/p5.millefeuille.esm.js';
-  // Your code here
-</script>
+```javascript
+import p5 from 'p5';
+import millefeuilleAddon from 'p5.millefeuille';
+
+p5.registerAddon(millefeuilleAddon);
 ```
 
 ## Quick Start
 
-```javascript
-import { createLayerSystem, BlendModes } from 'p5.millefeuille';
+### Global Mode
 
+```javascript
 let layers;
 
 function setup() {
   createCanvas(800, 600, WEBGL);
 
-  // Create the layer system
-  layers = createLayerSystem(window);
+  // Create the layer system using the addon API
+  layers = createLayerSystem();
 
-  // Create layers - now with method chaining!
+  // Create layers with method chaining
   layers.createLayer('background');
   layers.createLayer('effects')
-    .setBlendMode(BlendModes.ADD)
     .setOpacity(0.7);
 }
 
 function draw() {
-  // Draw to background layer - using string names
+  // Draw to background layer
   layers.begin('background');
   clear();
   background(30, 30, 60);
-  // ... draw your background content
   layers.end();
 
   // Draw to effects layer
@@ -71,20 +76,56 @@ function draw() {
 }
 ```
 
+### Instance Mode
+
+```javascript
+new p5(sketch => {
+  let layers;
+  
+  sketch.setup = function() {
+    sketch.createCanvas(800, 600, sketch.WEBGL);
+    
+    // Create layer system using instance method
+    layers = sketch.createLayerSystem();
+    
+    layers.createLayer('background');
+    layers.createLayer('effects').setOpacity(0.7);
+  };
+  
+  sketch.draw = function() {
+    layers.begin('background');
+    sketch.clear();
+    sketch.background(30, 30, 60);
+    layers.end();
+    
+    layers.begin('effects');
+    sketch.clear();
+    // ... draw effects
+    layers.end();
+    
+    layers.render();
+  };
+});
+```
+
 ## API Reference
 
-### `createLayerSystem(p5Instance)`
+### `createLayerSystem(options)`
 
-Factory function to create a new LayerSystem.
+Creates a new LayerSystem instance (available in global mode or as `sketch.createLayerSystem()` in instance mode).
 
 **Parameters:**
-- `p5Instance` (p5) - The p5.js instance (required in instance mode, auto-detected in global mode)
+- `options` (object, optional) - Layer system configuration
 
 **Returns:** `LayerSystem` instance
 
 **Example:**
 ```javascript
-const layers = createLayerSystem(window);
+// Global mode
+const layers = createLayerSystem();
+
+// Instance mode
+const layers = sketch.createLayerSystem();
 ```
 
 ---
@@ -401,6 +442,15 @@ Available blend modes in `BlendModes`:
 - **SCREEN** - Lightens colors (approximated in WebGL)
 - **ADD** - Additive blending (great for glows)
 - **SUBTRACT** - Subtractive blending
+- **OVERLAY** - Combines Multiply and Screen
+- **SOFT_LIGHT** - Soft light effect
+- **HARD_LIGHT** - Hard light effect
+- **COLOR_DODGE** - Brightens colors
+- **COLOR_BURN** - Darkens colors
+- **DARKEN** - Keeps darker colors
+- **LIGHTEN** - Keeps lighter colors
+- **DIFFERENCE** - Inverts colors based on difference
+- **EXCLUSION** - Similar to Difference but lower contrast
 
 ## Examples
 

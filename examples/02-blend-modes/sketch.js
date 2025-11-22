@@ -1,4 +1,4 @@
-import { createLayerSystem, BlendModes } from '../../dist/p5.millefeuille.esm.js';
+// No imports needed - library auto-registered via script tag
 
 let ls; // Layer system 
 let redGradient, greenGradient, blueGradient; // Gradient graphics

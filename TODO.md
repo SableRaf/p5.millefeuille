@@ -8,10 +8,11 @@
 - [x] Fix re-ordering of layers causing other layers to disappear (see blend modes example)
 
 ## Ready for work
+- [x] Turn into a p5.js library (see LIBRARY_PLAN.md for details)
 - [ ] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard
 
 ## Needs planning/research/discussion
-- [ ] Turn into a p5.js library (see LIBRARY_PLAN.md for details)
+- [ ] Make documentation website with examples and API reference (use JSDoc or similar)
 - [ ] Add `displayName` property to layers separate from ID & name
 - [ ] Add visual unit tests for all blend modes
 - [ ] Use the shaders from glsl-blend directly instead of importing via npm (to allow adding more modes and fixing issues since it is not actively maintained)

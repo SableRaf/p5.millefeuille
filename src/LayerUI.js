@@ -61,22 +61,25 @@ export class LayerUI {
     // Position the panel
     this._positionPanel();
 
+    // Get cleanup signal for event listeners
+    const signal = this.layerSystem.p._removeSignal;
+
     // Add event listeners
     if (this.options.collapsible) {
       const collapseBtn = header.querySelector('.p5ml-collapse-btn');
-      collapseBtn.addEventListener('click', () => this.toggle());
+      collapseBtn.addEventListener('click', () => this.toggle(), { signal });
       // Prevent collapse button from triggering drag
-      collapseBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      collapseBtn.addEventListener('mousedown', (e) => e.stopPropagation(), { signal });
     }
 
     // Arrow button handlers
     const upBtn = header.querySelector('.p5ml-arrow-up');
     const downBtn = header.querySelector('.p5ml-arrow-down');
-    upBtn.addEventListener('click', () => this._moveSelectedLayer(-1));
-    downBtn.addEventListener('click', () => this._moveSelectedLayer(1));
+    upBtn.addEventListener('click', () => this._moveSelectedLayer(-1), { signal });
+    downBtn.addEventListener('click', () => this._moveSelectedLayer(1), { signal });
     // Prevent arrow buttons from triggering drag
-    upBtn.addEventListener('mousedown', (e) => e.stopPropagation());
-    downBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+    upBtn.addEventListener('mousedown', (e) => e.stopPropagation(), { signal });
+    downBtn.addEventListener('mousedown', (e) => e.stopPropagation(), { signal });
 
     // Make draggable if enabled
     if (this.options.draggable) {
@@ -90,7 +93,7 @@ export class LayerUI {
         this._closeAllDropdowns();
         this._deselectLayer();
       }
-    });
+    }, { signal });
 
     // Keyboard navigation for arrow keys
     document.addEventListener('keydown', (e) => {
@@ -108,7 +111,7 @@ export class LayerUI {
           this._moveSelectedLayer(1);
         }
       }
-    });
+    }, { signal });
   }
 
   /**
@@ -147,6 +150,8 @@ export class LayerUI {
     let offsetY;
 
     header.style.cursor = 'move';
+
+    const signal = this.layerSystem.p._removeSignal;
 
     header.addEventListener('mousedown', (e) => {
       // Get current position using getBoundingClientRect for accuracy
@@ -188,11 +193,11 @@ export class LayerUI {
         this.container.style.left = newX + 'px';
         this.container.style.top = newY + 'px';
       }
-    });
+    }, { signal });
 
     document.addEventListener('mouseup', () => {
       isDragging = false;
-    });
+    }, { signal });
   }
 
   /**
@@ -328,6 +333,7 @@ export class LayerUI {
     layerEl.dataset.layerId = layer.id;
 
     // Add click handler to select layer and update thumbnail
+    const signal = this.layerSystem.p._removeSignal;
     layerEl.addEventListener('click', (e) => {
       // Close all dropdowns when clicking on the layer row itself
       if (e.target.classList.contains('p5ml-layer-row') ||
@@ -338,7 +344,7 @@ export class LayerUI {
         this._selectLayer(layer.id);
         this._updateLayerThumbnail(layer.id);
       }
-    });
+    }, { signal });
 
     // Main layer row (Procreate style: thumbnail | name | blend letter | checkbox)
     const layerRow = document.createElement('div');
@@ -374,7 +380,7 @@ export class LayerUI {
 
       // Toggle this dropdown (if it wasn't already open)
       dropdown.style.display = isExpanded ? 'none' : 'block';
-    });
+    }, { signal });
 
     // Visibility checkbox
     const visibilityCheckbox = document.createElement('input');
@@ -389,7 +395,7 @@ export class LayerUI {
       } else {
         this.layerSystem.hide(layer.id);
       }
-    });
+    }, { signal });
 
     rightControls.appendChild(blendIndicator);
     rightControls.appendChild(visibilityCheckbox);
@@ -422,7 +428,7 @@ export class LayerUI {
       const value = parseFloat(e.target.value) / 100;
       this.layerSystem.setOpacity(layer.id, value);
       opacityValue.textContent = e.target.value + '%';
-    });
+    }, { signal });
 
     opacityGroup.appendChild(opacityLabel);
     opacityGroup.appendChild(opacityValue);
@@ -451,7 +457,7 @@ export class LayerUI {
       this.layerSystem.setBlendMode(layer.id, e.target.value);
       blendIndicator.textContent = this._getBlendModeLetter(e.target.value);
       blendIndicator.title = `Blend Mode: ${e.target.value}`;
-    });
+    }, { signal });
 
     blendGroup.appendChild(blendLabel);
     blendGroup.appendChild(blendSelect);

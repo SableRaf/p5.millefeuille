@@ -1,11 +1,11 @@
-import { createLayerSystem, BlendModes } from '../../dist/p5.millefeuille.esm.js?v=20251115171000';
+// No imports needed - library auto-registered via script tag
 
 let ls; // Layer system 
 
 window.setup = function() {
   createCanvas(800, 600, WEBGL);
 
-  // Create the layer system (auto-detects p5 instance in global mode)
+  // Create the layer system using the addon API
   ls = createLayerSystem();
 
   // Create three layers 
