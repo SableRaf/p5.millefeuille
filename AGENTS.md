@@ -147,7 +147,8 @@ p5.millefeuille/
 ├── examples/                 # HTML example files
 │   ├── 01-basic.html        # Basic multi-layer example
 │   ├── 02-blend-modes.html  # Blend mode demonstrations
-│   └── 03-masking.html      # Mask usage examples
+│   ├── 03-masking.html      # Mask usage examples
+│   └── 04-full-window.html  # Resizeable window example
 ├── lib/                      # Vendored dependencies (p5.js)
 ├── test/                     # Unit tests (Jest)
 ├── rollup.config.js         # Build configuration
@@ -264,6 +265,15 @@ p5.millefeuille/
 - Framework: Jest
 - Test directory: `test/`
 - Coverage areas: Layer creation, property setting, compositing logic
+
+### Adding/Modifying Examples
+- Examples are located in the `examples/` directory as standalone HTML files.
+- To add a new example:
+  1. Create a new HTML file in `examples/`.
+  2. Reference the built library from `../dist/p5.millefeuille.js` or `../dist/p5.millefeuille.esm.js`.
+  3. Implement your sketch using the LayerSystem API.
+  4. Test the example by running `npm run examples` and navigating to the appropriate URL.
+  5. Update `webpack.deploy.js` to include your new example in the deployment process.
 
 ## Common Patterns
 
