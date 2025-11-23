@@ -539,6 +539,11 @@ export class LayerUI {
 
     if (this._thumbnailScratchCtx && (cacheEntry.boundsDirty || !cacheEntry.drawBounds)) {
       const rawBounds = this._calculateBoundsFromCanvas(sourceCanvas);
+      // If first capture is empty, don't cache it - allow future updates
+      if (!rawBounds && !cacheEntry.drawBounds) {
+        cacheEntry.image = null;
+        return;
+      }
       this._applyBoundsToCache(cacheEntry, rawBounds, sourceCanvas);
       cacheEntry.boundsDirty = false;
     } else if (!cacheEntry.drawBounds) {

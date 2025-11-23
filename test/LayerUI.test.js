@@ -327,4 +327,60 @@ describe('LayerUI', () => {
     flushSpy.mockRestore();
     ui.dispose();
   });
+
+  test('empty first capture does not block future updates', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const layer = system.createLayer('EmptyFirst');
+    const ui = system.createUI();
+    ui.update();
+
+    const cacheEntry = ui._getOrCreateThumbnailCacheEntry(layer.id);
+
+    // Simulate first capture returning an empty canvas (null bounds)
+    const emptyCanvas = document.createElement('canvas');
+    emptyCanvas.width = 100;
+    emptyCanvas.height = 100;
+    cacheEntry.image = { canvas: emptyCanvas };
+    cacheEntry.boundsDirty = true;
+
+    // Mock _calculateBoundsFromCanvas to return null (empty frame)
+    const boundsSpy = jest.spyOn(ui, '_calculateBoundsFromCanvas').mockReturnValue(null);
+
+    // Run the update - should clear the image since bounds are null
+    ui._updateLayerThumbnail(layer.id);
+
+    // Empty capture should clear cached image to allow future updates
+    expect(cacheEntry.image).toBeNull();
+
+    boundsSpy.mockRestore();
+    ui.dispose();
+  });
+
+  test('empty first capture allows subsequent non-empty capture', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const layer = system.createLayer('EmptyThenFull');
+    const ui = system.createUI();
+    ui.update();
+
+    // Clear initial state
+    ui._captureNeeded.clear();
+    ui._dirtyThumbnailLayerIds.clear();
+
+    const cacheEntry = ui._getOrCreateThumbnailCacheEntry(layer.id);
+    // Ensure no cached image (simulating cleared empty capture)
+    cacheEntry.image = null;
+
+    const flushSpy = jest.spyOn(ui, '_scheduleThumbnailFlush');
+
+    // Mark dirty - should schedule since no cached thumbnail
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+
+    expect(flushSpy).toHaveBeenCalled();
+    expect(ui._dirtyThumbnailLayerIds.has(layer.id)).toBe(true);
+
+    flushSpy.mockRestore();
+    ui.dispose();
+  });
 });
