@@ -17,6 +17,8 @@
 - [ ] Add more examples demonstrating different use cases (e.g., masking, complex compositions, animations)
 - [ ] Migrate to TypeScript for better type safety and developer experience
 - [ ] Add TypeScript declaration file for better IDE support and type checking
+- [ ] Add an example with resizeable canvas and layers that adapt to the new size.
+- [ ] Add optional mask thumbnails to the LayerUI for layers that have masks applied
 
 ## Needs planning/research/discussion
 - [ ] CI/CD pipeline for releasing new versions on GitHub (see Processing's release process)
