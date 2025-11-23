@@ -1,6 +1,7 @@
-# p5.millefeuille
+>[!WARNING]
+> This repository is a work in progress and not yet ready for production use. The API and features may change significantly before the first stable release. Use at your own risk.
 
-> A Photoshop-like layer system for p5.js WebGL
+# p5.millefeuille
 
 **p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js WebGL sketches. Built on top of `p5.Framebuffer`, it provides an intuitive API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
 
