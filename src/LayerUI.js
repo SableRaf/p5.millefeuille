@@ -24,7 +24,7 @@ export class LayerUI {
       thumbnailEmptyFrameReset: options.thumbnailEmptyFrameReset ?? 6,
       thumbnailSampleStride: options.thumbnailSampleStride ?? 1,
       thumbnailAutoUpdate: options.thumbnailAutoUpdate === true,
-      thumbnailUpdateEvery: options.thumbnailUpdateEvery ?? 0
+      thumbnailUpdateEvery: options.thumbnailUpdateEvery ?? 1
     };
 
     this.isCollapsed = false;
@@ -43,6 +43,8 @@ export class LayerUI {
     if (this._thumbnailScratchCtx) {
       this._thumbnailScratchCtx.imageSmoothingEnabled = false;
     }
+    // Lazy-initialized WEBGL buffer for GPU-to-GPU downsampling
+    this._downsampleBuffer = null;
 
     this._checkerPatternCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
     this._checkerPatternCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
@@ -552,23 +554,100 @@ export class LayerUI {
     return this._thumbnailCache.get(layerId);
   }
 
+  /**
+   * Lazily initializes a framebuffer for GPU-to-GPU downsampling.
+   * Uses p5.Framebuffer to stay in the same WebGL context as source framebuffers.
+   * @private
+   */
+  _getDownsampleBuffer(width, height) {
+    const p = this.layerSystem.p;
+    if (!p || typeof p.createFramebuffer !== 'function') {
+      return null;
+    }
+
+    // Create or resize the buffer as needed
+    if (!this._downsampleBuffer) {
+      try {
+        this._downsampleBuffer = p.createFramebuffer({
+          width,
+          height,
+          density: 1,
+          depthFormat: p.UNSIGNED_INT,
+          textureFiltering: p.LINEAR
+        });
+      } catch (e) {
+        console.debug('Could not create downsample framebuffer:', e);
+        return null;
+      }
+    } else if (this._downsampleBuffer.width !== width || this._downsampleBuffer.height !== height) {
+      this._downsampleBuffer.resize(width, height);
+    }
+
+    return this._downsampleBuffer;
+  }
+
+  /**
+   * Captures a downsampled image from a framebuffer using GPU-to-GPU copy.
+   * This avoids reading the full framebuffer, reducing readback from ~8MB to ~150KB.
+   * @private
+   */
   _captureLayerImage(layer) {
     const source = layer.framebuffer;
     if (!source) {
       return null;
     }
 
+    const p = this.layerSystem.p;
+    if (!p) {
+      return null;
+    }
+
+    // Calculate downsampled dimensions
+    const maxSize = Math.max(1, this.options.thumbnailSampleMaxSize);
+    const sourceWidth = source.width || p.width;
+    const sourceHeight = source.height || p.height;
+    const largestSide = Math.max(sourceWidth, sourceHeight);
+    const scale = largestSide > maxSize ? maxSize / largestSide : 1;
+    const sampleWidth = Math.max(1, Math.round(sourceWidth * scale));
+    const sampleHeight = Math.max(1, Math.round(sourceHeight * scale));
+
     try {
+      const buffer = this._getDownsampleBuffer(sampleWidth, sampleHeight);
+      if (!buffer) {
+        // Fallback to direct get() if buffer creation failed
+        if (typeof source.get === 'function') {
+          return source.get();
+        }
+        return null;
+      }
+
+      // GPU-to-GPU copy: render source framebuffer to small buffer
+      buffer.begin();
+      p.clear();
+      p.push();
+      p.imageMode(p.CORNER);
+      // Translate to top-left corner (WEBGL origin is center)
+      p.translate(-sampleWidth / 2, -sampleHeight / 2);
+      p.image(source, 0, 0, sampleWidth, sampleHeight);
+      p.pop();
+      buffer.end();
+
+      // Small readback: only ~150KB instead of ~8MB
+      const result = buffer.get();
+
+      // Store original dimensions for bounds scaling
+      result._originalWidth = sourceWidth;
+      result._originalHeight = sourceHeight;
+
+      return result;
+    } catch (e) {
+      console.debug('Could not capture downsampled thumbnail:', e);
+      // Fallback to direct get()
       if (typeof source.get === 'function') {
         return source.get();
       }
-      if (source.canvas) {
-        return source;
-      }
-    } catch (e) {
-      console.debug('Could not capture thumbnail:', e);
+      return null;
     }
-    return null;
   }
 
   _calculateBoundsFromCanvas(sourceCanvas) {
