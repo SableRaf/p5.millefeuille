@@ -4,8 +4,16 @@
 
 **p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js WebGL sketches. Built on top of `p5.Framebuffer`, it provides an intuitive API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
 
-## Features
+## What is "millefeuille"?
+"Millefeuille" is French for "a thousand layers," referring to a classic French pastry made of many thin layers of puff pastry and cream. Just like the dessert, this library allows you to build complex sketches by stacking multiple layers of graphics.
 
+## Motivation
+In creative coding, layering is a powerful technique for organizing and composing visual elements. However, p5.js's WebGL mode lacks a built-in layer system similar to Photoshop or other graphics software. **p5.millefeuille** fills this gap by providing an easy-to-use layer management system that integrates seamlessly with p5.js, enabling artists and developers to create rich, layered visuals with minimal effort.
+
+## What is this not
+Millefeuille is not an image editing library. It does not provide tools for pixel-level manipulation, filters, or effects like Photoshop, GIMP, Krita, or other dedicated image editors. Instead, it focuses on managing multiple render targets (layers) and compositing them efficiently using WebGL shaders.
+
+## Features
 - **Layer Management**: Create, remove, and reorder layers with ease
 - **14 Blend Modes**: Normal, Multiply, Screen, Add, Subtract, Overlay, Soft Light, Hard Light, Color Dodge, Color Burn, Darken, Lighten, Difference, Exclusion
 - **Layer Properties**: Control visibility, opacity, and z-index
