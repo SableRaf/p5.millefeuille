@@ -230,6 +230,13 @@ p5.millefeuille/
 
 ## Development Workflow
 
+### Tooling Overview
+- **Rollup 4** (`rollup.config.js`) builds the library into UMD (dev + minified) and ESM bundles, using `@rollup/plugin-node-resolve`, `rollup-plugin-glslify`, a lightweight shader loader, and `@rollup/plugin-terser` for minification.
+- **Jest 29** runs the unit tests inside `test/` with a custom `CanvasSafeEnvironment` and shader/canvas mocks; source files are transformed via `babel-jest` + `@babel/preset-env` strictly for test-time transpilation.
+- **ESLint 8** lints `src/**/*.js` through `npm run lint`, enforcing consistent style across the core modules.
+- **Webpack 5** (`webpack.deploy.js`) packages the `/examples` site for GitHub Pages, inlining build timestamps, rewriting asset paths, and copying the built library + assets into `.gh-pages/` prior to publishing.
+- **http-server** powers `npm run examples`, serving the repo at `localhost:8000` with auto-kill of any stale process; **gh-pages** then pushes `.gh-pages/` to the `gh-pages` branch via `npm run deploy`.
+
 ### Build System
 - **Tool:** Rollup
 - **Commands:**
