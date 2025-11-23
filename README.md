@@ -260,7 +260,7 @@ Sets layer blend mode.
 
 **Parameters:**
 - `layerIdOrName` (number|string) - The layer ID or name
-- `mode` (string) - One of: `BlendModes.NORMAL`, `BlendModes.MULTIPLY`, `BlendModes.SCREEN`, `BlendModes.ADD`, `BlendModes.SUBTRACT`
+- `mode` (string) - One of: `BlendModes.NORMAL`, `BlendModes.MULTIPLY`, `BlendModes.SCREEN`, `BlendModes.ADD`, `BlendModes.SUBTRACT`, `BlendModes.OVERLAY`, `BlendModes.SOFT_LIGHT`, `BlendModes.HARD_LIGHT`, `BlendModes.COLOR_DODGE`, `BlendModes.COLOR_BURN`, `BlendModes.DARKEN`, `BlendModes.LIGHTEN`, `BlendModes.DIFFERENCE`, `BlendModes.EXCLUSION`
 
 **Returns:** `Layer|null` - The layer for chaining, or null if not found
 
