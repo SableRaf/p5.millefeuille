@@ -244,6 +244,15 @@ p5.millefeuille/
 - `p5.millefeuille.esm.js` - ES Module (module)
 - `p5.millefeuille.min.js` - Minified UMD (unpkg)
 
+#### Why Ship Both UMD and ESM?
+- UMD keeps `<script>` tag users covered, but modern bundlers default to the ESM entry for tree-shaking and native `import` syntax.
+- Browsers can load the ESM build directly via `<script type="module">`, so dropping it would block zero-tooling users on modern stacks.
+- Package managers choose between the `main` (UMD) and `module` (ESM) fields automatically; removing ESM silently forces everyone onto the heavier fallback bundle.
+
+#### Deployment Bundler
+- Rollup handles the library builds exclusively; it is optimized for producing the distributable bundles in `dist/`.
+- Webpack is reserved for `npm run deploy`, where it packages the `examples/` site (HTML, CSS, assets) into a static artifact, something Rollup is not configured to do.
+
 ### Testing
 - Framework: Jest
 - Test directory: `test/`
