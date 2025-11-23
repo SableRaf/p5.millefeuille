@@ -12,6 +12,7 @@
 - [x] Crop layer thumbnails to non-transparent bounds with padding. If animated, use the largest frame's bounds with a sliding window to find the max extents across frames and avoid jumpy thumbnails.
 
 ## Ready for work
+- [ ] Bundle should create a zipped version of the library files for easier download
 - [ ] Change instance mode example to have multiple sketches on the same page all using p5.millefeuille
 - [ ] Add JSDoc comments to all public methods and properties
 - [ ] Add more examples demonstrating different use cases (e.g., masking, complex compositions, animations)
@@ -26,6 +27,7 @@
 - [ ] Publish p5.millefeuille to npm
 - [ ] Make documentation website with examples and API reference (use JSDoc or similar)
 - [ ] Add `displayName` property to layers separate from ID/name (the ID is fixed and unique and used internally, the name can be changed at runtime and is not necessarily unique, the displayName is what is shown in the UI and can have duplicates)
+  - [ ] Ability to rename layers in the LayerUI
 - [ ] Add visual unit tests for all blend modes
 - [ ] Use the shaders from glsl-blend directly instead of importing via npm (to allow adding more modes and fixing issues since it is not actively maintained)
 - [ ] Add REPLACE and REMOVE blend modes
