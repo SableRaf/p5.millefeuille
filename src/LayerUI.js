@@ -24,8 +24,13 @@ export class LayerUI {
       thumbnailEmptyFrameReset: options.thumbnailEmptyFrameReset ?? 6,
       thumbnailSampleStride: options.thumbnailSampleStride ?? 1,
       thumbnailAutoUpdate: options.thumbnailAutoUpdate === true,
-      thumbnailUpdateEvery: options.thumbnailUpdateEvery ?? 1
+      thumbnailUpdateEvery: options.thumbnailUpdateEvery ?? 0
     };
+
+    // Warn if thumbnailUpdateEvery is set but thumbnailAutoUpdate is false
+    if (options.thumbnailUpdateEvery !== undefined && options.thumbnailUpdateEvery > 0 && !this.options.thumbnailAutoUpdate) {
+      console.warn('p5.millefeuille: thumbnailUpdateEvery is set but thumbnailAutoUpdate is false. thumbnailUpdateEvery will be ignored. Set thumbnailAutoUpdate: true to enable automatic thumbnail updates.');
+    }
 
     this.isCollapsed = false;
     this.container = null;
@@ -340,12 +345,20 @@ export class LayerUI {
     let shouldSchedule = false;
 
     // Determine if this frame should trigger an update based on settings
-    const updateEvery = this.options.thumbnailUpdateEvery;
-    let isUpdateFrame = this.options.thumbnailAutoUpdate;
-    if (!isUpdateFrame && updateEvery > 0 && needsCapture) {
-      // Use p5's frameCount to determine update frames consistently across all layers
-      const frameCount = this.layerSystem.p.frameCount || 0;
-      isUpdateFrame = frameCount % updateEvery === 0;
+    // If thumbnailAutoUpdate is false, no automatic updates (thumbnailUpdateEvery is ignored)
+    // If thumbnailAutoUpdate is true and thumbnailUpdateEvery is not set (0), update every frame
+    // If thumbnailAutoUpdate is true and thumbnailUpdateEvery > 0, update every N frames
+    let isUpdateFrame = false;
+    if (this.options.thumbnailAutoUpdate && needsCapture) {
+      const updateEvery = this.options.thumbnailUpdateEvery;
+      if (updateEvery <= 0) {
+        // Default to every frame when thumbnailAutoUpdate is true but thumbnailUpdateEvery not set
+        isUpdateFrame = true;
+      } else {
+        // Use p5's frameCount to determine update frames consistently across all layers
+        const frameCount = this.layerSystem.p.frameCount || 0;
+        isUpdateFrame = frameCount % updateEvery === 0;
+      }
     }
 
     ids.forEach(id => {

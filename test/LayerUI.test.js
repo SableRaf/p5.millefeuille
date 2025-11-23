@@ -196,4 +196,135 @@ describe('LayerUI', () => {
     flushSpy.mockRestore();
     ui.dispose();
   });
+
+  test('warns when thumbnailUpdateEvery is set but thumbnailAutoUpdate is false', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const ui = system.createUI({
+      thumbnailAutoUpdate: false,
+      thumbnailUpdateEvery: 5
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('thumbnailUpdateEvery is set but thumbnailAutoUpdate is false')
+    );
+
+    warnSpy.mockRestore();
+    ui.dispose();
+  });
+
+  test('does not warn when thumbnailUpdateEvery is set and thumbnailAutoUpdate is true', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const ui = system.createUI({
+      thumbnailAutoUpdate: true,
+      thumbnailUpdateEvery: 5
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    ui.dispose();
+  });
+
+  test('thumbnailAutoUpdate true with no thumbnailUpdateEvery updates every frame', () => {
+    const p5 = createP5Stub();
+    p5.frameCount = 1;
+    const system = new LayerSystem(p5);
+    const layer = system.createLayer('AutoUpdate');
+    const ui = system.createUI({ thumbnailAutoUpdate: true });
+    ui.update();
+
+    // Pretend this layer already has a cached thumbnail
+    const cacheEntry = ui._getOrCreateThumbnailCacheEntry(layer.id);
+    cacheEntry.image = { canvas: document.createElement('canvas') };
+
+    // Clear state from initial update() call
+    ui._captureNeeded.clear();
+    ui._dirtyThumbnailLayerIds.clear();
+
+    const flushSpy = jest.spyOn(ui, '_scheduleThumbnailFlush');
+
+    // Mark the layer dirty - should update because thumbnailAutoUpdate is true
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+
+    expect(ui._dirtyThumbnailLayerIds.has(layer.id)).toBe(true);
+    expect(ui._captureNeeded.has(layer.id)).toBe(true);
+    expect(flushSpy).toHaveBeenCalled();
+
+    flushSpy.mockRestore();
+    ui.dispose();
+  });
+
+  test('thumbnailAutoUpdate true with thumbnailUpdateEvery respects frame interval', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const layer = system.createLayer('Interval');
+    const ui = system.createUI({
+      thumbnailAutoUpdate: true,
+      thumbnailUpdateEvery: 3
+    });
+    ui.update();
+
+    // Pretend this layer already has a cached thumbnail
+    const cacheEntry = ui._getOrCreateThumbnailCacheEntry(layer.id);
+    cacheEntry.image = { canvas: document.createElement('canvas') };
+
+    // Clear state from initial update() call
+    ui._captureNeeded.clear();
+    ui._dirtyThumbnailLayerIds.clear();
+
+    const flushSpy = jest.spyOn(ui, '_scheduleThumbnailFlush');
+
+    // Frame 1: not a multiple of 3, should skip
+    p5.frameCount = 1;
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+    expect(ui._dirtyThumbnailLayerIds.has(layer.id)).toBe(false);
+    expect(flushSpy).not.toHaveBeenCalled();
+
+    // Frame 3: multiple of 3, should update
+    p5.frameCount = 3;
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+    expect(ui._dirtyThumbnailLayerIds.has(layer.id)).toBe(true);
+    expect(flushSpy).toHaveBeenCalled();
+
+    flushSpy.mockRestore();
+    ui.dispose();
+  });
+
+  test('thumbnailAutoUpdate false ignores thumbnailUpdateEvery', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const layer = system.createLayer('Ignored');
+    const ui = system.createUI({
+      thumbnailAutoUpdate: false,
+      thumbnailUpdateEvery: 1 // Even with update every frame, should be ignored
+    });
+    ui.update();
+
+    // Pretend this layer already has a cached thumbnail
+    const cacheEntry = ui._getOrCreateThumbnailCacheEntry(layer.id);
+    cacheEntry.image = { canvas: document.createElement('canvas') };
+
+    // Clear state from initial update() call
+    ui._captureNeeded.clear();
+    ui._dirtyThumbnailLayerIds.clear();
+
+    const flushSpy = jest.spyOn(ui, '_scheduleThumbnailFlush');
+
+    // Even on frame 1 with thumbnailUpdateEvery=1, should not update
+    p5.frameCount = 1;
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+    expect(ui._dirtyThumbnailLayerIds.has(layer.id)).toBe(false);
+    expect(flushSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    flushSpy.mockRestore();
+    ui.dispose();
+  });
 });
