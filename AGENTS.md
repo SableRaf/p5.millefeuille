@@ -391,7 +391,7 @@ console.log(p5Instance._renderer.drawingContext);
 ### Screenshots & Visual Debugging
 Use playwrigth MCP to capture screenshots of layer compositions for visual debugging.
 
-### Documentation
+### p5.js 2.x reference
 We are using p5.js 2.1.1 so refer to the latest documentation at https://beta.p5js.org/reference/. Until 2.x is the default, refer to the beta site.
 
 ## Related Resources
@@ -418,6 +418,18 @@ When making changes:
 - **Current Version:** 0.1.0
 - **License:** LGPL-2.1
 - **Peer Dependency:** p5.js ^2.1.1
+
+## Documentation and Memory Files
+
+- [PRD.md](PRD.md) - Product Requirements Document
+- [TODO.md](TODO.md) - Task tracking and future work
+- `.claude/` - AI assistant memory files 
+- [AGENTS.md](AGENTS.md) - AI assistant context and configurations
+
+After any significant code changes:
+- run tests to ensure no regressions.
+- update the files above to keep documentation in sync.
+- ensure relevant memory files in `.claude/{{fileName}}.md` are updated to reflect changes.
 
 
 ## Changelog
