@@ -1,0 +1,229 @@
+USER: <role>You are a senior software architect with 15+ years of experience in designing large-scale distributed systems. Your expertise spans cloud-native architectures, microservices, event-driven systems, and enterprise integration patterns. You have successfully architected systems handling millions of users and billions of transactions.</role>
+
+<task>Perform a comprehensive architectural review of the proposed system design. Analyze it through multiple lenses including scalability, reliability, security, and cost-effectiveness. For each aspect, think step-by-step about both current state and future implications. Consider edge cases, failure scenarios, and growth patterns. Provide actionable recommendations backed by industry best practices and real-world experience.</task>
+
+<response_format>
+<system_overview>
+- Core business purpose and key requirements
+- System boundaries and key interfaces
+- Major components and their interactions
+- Data flow patterns
+- Technology stack choices and rationale
+- Key architectural decisions and their drivers
+</system_overview>
+
+<architectural_patterns>
+- Patterns identified:
+  • List each major pattern
+  • Explain how it's implemented
+  • Context of why it was chosen
+
+- Pattern effectiveness analysis:
+  • How well does each pattern solve its intended problem?
+  • Are there any pattern conflicts?
+  • Alternative patterns that could be considered
+  • Integration points between patterns
+  • Technical debt implications
+</architectural_patterns>
+
+<scalability_analysis>
+- Horizontal scaling assessment ($horizontal_scale_rating/5):
+  • Stateless vs stateful components
+  • Data partitioning strategy
+  • Caching architecture
+  • Load balancing approach
+  • Service discovery mechanism
+
+- Vertical scaling assessment ($vertical_scale_rating/5):
+  • Resource utilization patterns
+  • Performance bottlenecks
+  • Memory/CPU optimization opportunities
+  • Database scaling strategy
+
+- System bottlenecks:
+  • Current bottlenecks
+  • Potential future bottlenecks
+  • Data flow constraints
+  • Network limitations
+  • Third-party dependencies
+</scalability_analysis>
+
+<reliability_review>
+- Fault tolerance assessment ($fault_tolerance_score/5):
+  • Failure modes analysis
+  • Circuit breaker implementations
+  • Retry strategies
+  • Fallback mechanisms
+  • Service degradation approaches
+
+- Disaster recovery capability ($disaster_recovery_score/5):
+  • Backup strategies
+  • Recovery time objective (RTO)
+  • Recovery point objective (RPO)
+  • Multi-region considerations
+  • Data consistency during failures
+
+- Reliability improvements:
+  • Immediate actions needed
+  • Medium-term enhancements
+  • Long-term strategic improvements
+  • Monitoring and observability gaps
+  • Incident response recommendations
+</reliability_review>
+
+<security_assessment>
+- Security measures evaluation:
+  • Authentication mechanisms
+  • Authorization model
+  • Data encryption (at rest and in transit)
+  • API security
+  • Network security
+  • Audit logging
+
+- Vulnerability analysis:
+  • Attack surface assessment
+  • Common vulnerability exposure
+  • Data privacy risks
+  • Compliance gaps
+  • Third-party security risks
+
+- Security recommendations:
+  • Critical fixes needed
+  • Security pattern improvements
+  • Infrastructure hardening steps
+  • Security monitoring enhancements
+  • Compliance requirements
+</security_assessment>
+
+<cost_efficiency>
+- Resource utilization assessment ($resource_efficiency/5):
+  • Compute resource efficiency  
+  • Storage optimization  
+  • Network usage patterns  
+  • License cost analysis  
+  • Operational overhead  
+
+- Cost optimization suggestions:  
+  • Immediate cost reduction opportunities  
+  • Resource right-sizing recommendations  
+  • Reserved instance strategies  
+  • Architectural optimizations for cost  
+  • Infrastructure automation opportunities  
+  • Maintenance cost reduction approaches  
+</cost_efficiency>
+
+<implementation_roadmap>
+- Phase 1 (Immediate):  
+  • Critical improvements  
+  • Quick wins  
+  • Risk mitigation steps  
+
+- Phase 2 (3–6 months):  
+  • Strategic improvements  
+  • Scalability enhancements  
+  • Security hardening  
+
+- Phase 3 (6–12 months):  
+  • Long-term optimizations  
+  • Architecture evolution  
+  • Technical debt reduction  
+</implementation_roadmap>
+
+<architecture_metrics>
+- Quantitative Assessments:  
+  • Performance metrics  
+  • Reliability metrics  
+  • Security metrics  
+  • Cost metrics  
+  • Maintainability metrics  
+
+- Qualitative Assessments:  
+  • Architecture fitness for purpose  
+  • Future-proofing score  
+  • Technical debt assessment  
+  • Team capability alignment  
+  • Innovation potential  
+</architecture_metrics>
+</response_format>
+
+<evaluation_instructions>
+1. Start with understanding the business context and requirements thoroughly  
+2. Analyze each component's role in the overall architecture  
+3. Evaluate interactions between components  
+4. Consider both steady-state and peak load scenarios  
+5. Assess failure modes and recovery mechanisms  
+6. Review security from both external and internal threat perspectives  
+7. Analyze cost implications of architectural decisions  
+8. Consider operational complexity and maintainability  
+9. Evaluate alignment with industry best practices  
+10. Provide concrete, actionable recommendations  
+</evaluation_instructions>
+
+<analysis_principles>
+- Always consider trade-offs in architectural decisions  
+- Evaluate both current state and future scalability  
+- Focus on business value and technical excellence  
+- Consider operational reality and team capabilities  
+- Maintain balance between idealism and pragmatism  
+- Provide evidence-based recommendations  
+- Consider total cost of ownership  
+- Evaluate security at every layer  
+</analysis_principles>
+
+<inputs>
+<business_description>
+Library that brings Photoshop-style layers to p5.js WebGL sketches, allowing for multiple rendering layers with blend modes, opacity, and masking support.
+</business_description>
+
+<user_scale>
+Primarily individual developers, educators, and artists using p5.js for creative coding projects. Potential for growth into educational institutions and creative studios.
+</user_scale>
+
+<tech_stack>  
+See AGENTS.md for detailed tech stack information. Key technologies include:
+- p5.js (WebGL rendering)
+- JavaScript/ES6+
+- Rollup (build system)
+- Jest (testing)
+- Webpack (deployment bundler)
+</tech_stack>
+
+<constraints>
+- Must integrate seamlessly with p5.js WebGL environment
+- Lightweight and performant for real-time rendering
+- Easy-to-use API for developers familiar with p5.js
+- Compatibility with modern web browsers
+- Open-source licensing (LGPL-2.1)
+</constraints>
+
+<availability_requirements>  
+- Deployed to GitHub Pages for examples
+- NPM package for easy installation
+- CDN availability for direct script inclusion
+</availability_requirements>
+
+<security_requirements>  
+No sensitive data handling; focus on secure coding practices, dependency management, and minimizing attack surface in a web environment.
+</security_requirements>
+
+<proposed_system_design>
+- Core Components:
+  • Layer Management: Create, delete, reorder layers
+  • Blend Modes: Implement various blend modes for layer compositing
+  • Framebuffer Handling: Efficient rendering to off-screen buffers
+  • API Interface: User-friendly methods for layer manipulation
+- Data Flow:
+  • User code interacts with the p5.millefeuille API to create and manage layers
+  • Each layer renders to its own framebuffer
+  • Final compositing occurs in the main WebGL context using blend modes
+- Technology Choices:
+  • p5.js for rendering and canvas management
+  • Rollup for building distributable bundles
+  • Jest for unit testing to ensure code quality
+  • Webpack for packaging examples for deployment
+- Architectural Decisions:
+  • Modular design for maintainability and extensibility
+  • Use of WebGL framebuffers for performance
+  • UMD and ESM builds for broad compatibility
+</proposed_system_design>
+</inputs>
