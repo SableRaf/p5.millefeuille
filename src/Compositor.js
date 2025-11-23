@@ -15,6 +15,7 @@ export class Compositor {
     this.shaderLoaded = false;
     this.bufferA = null;
     this.bufferB = null;
+    this._bufferDensity = null;
   }
 
   /**
@@ -41,9 +42,11 @@ export class Compositor {
   _ensureBuffers() {
     const p = this.p;
     
+    const currentDensity = p.pixelDensity();
     const needsResize = !this.bufferA || 
-                        this.bufferA.width !== p.width || 
-                        this.bufferA.height !== p.height;
+              this.bufferA.width !== p.width || 
+              this.bufferA.height !== p.height ||
+              this._bufferDensity !== currentDensity;
     
     if (needsResize) {
       if (this.bufferA) {
@@ -54,13 +57,14 @@ export class Compositor {
       const bufferOptions = {
         width: p.width,
         height: p.height,
-        density: p.pixelDensity(),
+        density: currentDensity,
         antialias: false,
         depth: false
       };
       
       this.bufferA = p.createFramebuffer(bufferOptions);
       this.bufferB = p.createFramebuffer(bufferOptions);
+      this._bufferDensity = currentDensity;
     }
     
     return { a: this.bufferA, b: this.bufferB };
@@ -196,6 +200,7 @@ export class Compositor {
       this.bufferB.remove();
       this.bufferB = null;
     }
+    this._bufferDensity = null;
     
     // p5.js doesn't have explicit shader disposal, but we can clear the reference
     this.shader = null;

@@ -36,6 +36,7 @@ export class LayerSystem {
     this.autoResize = true;
     this._lastCanvasWidth = this.p.width;
     this._lastCanvasHeight = this.p.height;
+    this._lastPixelDensity = this.p.pixelDensity();
   }
 
   /**
@@ -337,16 +338,26 @@ export class LayerSystem {
    * @private
    */
   _checkResize() {
-    if (this.p.width !== this._lastCanvasWidth || this.p.height !== this._lastCanvasHeight) {
-      this._lastCanvasWidth = this.p.width;
-      this._lastCanvasHeight = this.p.height;
+    const currentWidth = this.p.width;
+    const currentHeight = this.p.height;
+    const currentDensity = this.p.pixelDensity();
 
-      // Resize all layers
-      for (const layer of this.layers.values()) {
-        // Only resize if layer doesn't have custom dimensions
-        if (!layer.customSize) {
-          layer.resize(this.p.width, this.p.height);
-        }
+    const sizeChanged = currentWidth !== this._lastCanvasWidth ||
+      currentHeight !== this._lastCanvasHeight;
+    const densityChanged = currentDensity !== this._lastPixelDensity;
+
+    if (!sizeChanged && !densityChanged) {
+      return;
+    }
+
+    this._lastCanvasWidth = currentWidth;
+    this._lastCanvasHeight = currentHeight;
+    this._lastPixelDensity = currentDensity;
+
+    // Resize all canvas-synced layers
+    for (const layer of this.layers.values()) {
+      if (!layer.customSize) {
+        layer.resize(currentWidth, currentHeight, currentDensity);
       }
     }
   }

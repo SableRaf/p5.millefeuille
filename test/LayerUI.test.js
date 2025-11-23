@@ -36,6 +36,7 @@ describe('LayerUI', () => {
     const system = new LayerSystem(p5);
     const layer = system.createLayer('Bounds');
     const ui = system.createUI({
+      thumbnailAutoUpdate: true, // Enable smoothing mode for this test
       thumbnailPadding: 5,
       thumbnailAnimationWindow: 2,
       thumbnailEmptyFrameReset: 3
@@ -58,6 +59,7 @@ describe('LayerUI', () => {
     const system = new LayerSystem(p5);
     const layer = system.createLayer('Bounds');
     const ui = system.createUI({
+      thumbnailAutoUpdate: true, // Enable smoothing mode for this test
       thumbnailPadding: 4,
       thumbnailAnimationWindow: 2,
       thumbnailEmptyFrameReset: 2
@@ -146,6 +148,52 @@ describe('LayerUI', () => {
     expect(scaleMid).toBeGreaterThan(scaleNoCrop);
     expect(scaleHigh).toBeGreaterThan(scaleMid);
 
+    ui.dispose();
+  });
+
+  test('default mode skips automatic updates for existing thumbnails', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const layer = system.createLayer('Solo');
+    const ui = system.createUI(); // thumbnailAutoUpdate defaults to false
+    ui.update();
+
+    // Pretend this layer already has a cached thumbnail
+    const cacheEntry = ui._getOrCreateThumbnailCacheEntry(layer.id);
+    cacheEntry.image = { canvas: document.createElement('canvas') };
+
+    // Clear state from initial update() call
+    ui._captureNeeded.clear();
+    ui._dirtyThumbnailLayerIds.clear();
+
+    const flushSpy = jest.spyOn(ui, '_scheduleThumbnailFlush');
+
+    // Mark the layer dirty as if it had been redrawn
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+
+    // With thumbnailAutoUpdate=false, automatic updates are skipped entirely
+    expect(ui._captureNeeded.has(layer.id)).toBe(false);
+    expect(ui._dirtyThumbnailLayerIds.has(layer.id)).toBe(false);
+    expect(flushSpy).not.toHaveBeenCalled();
+
+    flushSpy.mockRestore();
+    ui.dispose();
+  });
+
+  test('default mode still schedules initial capture', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const layer = system.createLayer('Fresh');
+    const ui = system.createUI(); // thumbnailAutoUpdate defaults to false
+    ui.update();
+
+    const flushSpy = jest.spyOn(ui, '_scheduleThumbnailFlush');
+
+    ui._markThumbnailsDirty([layer.id], { needsCapture: true });
+
+    expect(flushSpy).toHaveBeenCalled();
+
+    flushSpy.mockRestore();
     ui.dispose();
   });
 });

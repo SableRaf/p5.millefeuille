@@ -5,6 +5,9 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Distribution
+dist/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -22,7 +22,9 @@ export class LayerUI {
       thumbnailAlphaThreshold: options.thumbnailAlphaThreshold ?? 12,
       thumbnailAnimationWindow: options.thumbnailAnimationWindow ?? 6,
       thumbnailEmptyFrameReset: options.thumbnailEmptyFrameReset ?? 6,
-      thumbnailSampleStride: options.thumbnailSampleStride ?? 1
+      thumbnailSampleStride: options.thumbnailSampleStride ?? 1,
+      thumbnailAutoUpdate: options.thumbnailAutoUpdate === true,
+      thumbnailUpdateEvery: options.thumbnailUpdateEvery ?? 0
     };
 
     this.isCollapsed = false;
@@ -333,15 +335,45 @@ export class LayerUI {
   _markThumbnailsDirty(layerIds = [], options = {}) {
     const ids = Array.isArray(layerIds) ? layerIds : [layerIds];
     const needsCapture = !!options.needsCapture;
+    let shouldSchedule = false;
+
+    // Determine if this frame should trigger an update based on settings
+    const updateEvery = this.options.thumbnailUpdateEvery;
+    let isUpdateFrame = this.options.thumbnailAutoUpdate;
+    if (!isUpdateFrame && updateEvery > 0 && needsCapture) {
+      // Use p5's frameCount to determine update frames consistently across all layers
+      const frameCount = this.layerSystem.p.frameCount || 0;
+      isUpdateFrame = frameCount % updateEvery === 0;
+    }
+
     ids.forEach(id => {
       if (id === null || id === undefined) {
         return;
       }
+
+      const cacheEntry = this._thumbnailCache.get(id);
+      const hasThumbnail = !!(cacheEntry && cacheEntry.image);
+
+      // Without auto updates, skip automatic updates for existing thumbnails.
+      // Thumbnails will only update when user clicks the layer row.
+      if (!isUpdateFrame && hasThumbnail && needsCapture) {
+        return;
+      }
+
       this._dirtyThumbnailLayerIds.add(id);
       if (needsCapture) {
         this._captureNeeded.add(id);
       }
+
+      // Schedule flush if auto updates enabled, or if first capture needed
+      if (isUpdateFrame || (!hasThumbnail && needsCapture)) {
+        shouldSchedule = true;
+      }
     });
+
+    if (!shouldSchedule) {
+      return;
+    }
     this._scheduleThumbnailFlush();
   }
 
@@ -451,6 +483,7 @@ export class LayerUI {
    * @private
    */
   _updateLayerThumbnail(layerId) {
+    this._dirtyThumbnailLayerIds.delete(layerId);
     const layer = this.layerSystem.getLayers().find(l => l.id === layerId);
     if (!layer) return;
 
@@ -500,8 +533,6 @@ export class LayerUI {
 
     const drawBounds = cacheEntry.drawBounds || this._createFullBounds(sourceCanvas);
 
-    // Simple: compute a single scalar for "how cropped" this layer is
-    // Use the merged, padded drawBounds so cropAmount tracks the smoothed window.
     const cropAmount = this._getCropAmount(sourceCanvas, drawBounds);
     this._drawCheckerboard(ctx, canvas.width, canvas.height, cropAmount);
     this._drawThumbnailImage(ctx, canvas, sourceCanvas, drawBounds);
@@ -590,6 +621,26 @@ export class LayerUI {
       return;
     }
 
+    // Only use sliding window smoothing when thumbnailAutoUpdate is true (every frame).
+    // With irregular updates (thumbnailUpdateEvery or click-only), use bounds directly.
+    const useSmoothing = this.options.thumbnailAutoUpdate;
+
+    if (!useSmoothing) {
+      // Direct mode: just use the current bounds with padding
+      if (bounds && bounds.width > 0 && bounds.height > 0) {
+        cacheEntry.drawBounds = padBounds(
+          bounds,
+          this.options.thumbnailPadding,
+          sourceSize.width,
+          sourceSize.height
+        );
+      } else if (!cacheEntry.drawBounds) {
+        cacheEntry.drawBounds = this._createFullBounds(sourceSize);
+      }
+      return;
+    }
+
+    // Smoothing mode: use sliding window for every-frame updates
     if (!cacheEntry.window) {
       cacheEntry.window = [];
     }
@@ -633,9 +684,9 @@ export class LayerUI {
   }
 
   /**
-   * Returns a simple scalar in [0, 1] representing how tight the crop is.
-   * 0   => no crop (full layer)
-   * 1   => extremely tight crop (tiny region)
+   * Returns a scalar in [0, 1] representing how tight the crop is.
+   * 0 = no crop (full layer), 1 = extremely tight crop (tiny region)
+   * @private
    */
   _getCropAmount(sourceCanvas, bounds) {
     if (!sourceCanvas || !bounds || bounds.width <= 0 || bounds.height <= 0) {
@@ -644,17 +695,15 @@ export class LayerUI {
 
     const layerWidth = sourceCanvas.width || 1;
     const layerHeight = sourceCanvas.height || 1;
-
     const areaLayer = layerWidth * layerHeight;
     const areaCrop = bounds.width * bounds.height;
+
     if (!Number.isFinite(areaLayer) || areaLayer <= 0) {
       return 0;
     }
 
     const visibleFraction = Math.max(0, Math.min(1, areaCrop / areaLayer));
-    // Invert so that smaller visible fraction => larger crop amount
-    const cropAmount = 1 - visibleFraction;
-    return cropAmount;
+    return 1 - visibleFraction;
   }
 
   _drawThumbnailImage(ctx, targetCanvas, sourceCanvas, bounds) {
@@ -708,6 +757,8 @@ export class LayerUI {
           e.target.classList.contains('p5ml-thumbnail-canvas')) {
         this._closeAllDropdowns();
         this._selectLayer(layer.id);
+        // Force capture on click so thumbnail updates with current layer content
+        this._captureNeeded.add(layer.id);
         this._updateLayerThumbnail(layer.id);
       }
     }, { signal });
@@ -908,10 +959,9 @@ export class LayerUI {
     const pattern = this._getCheckerPattern(ctx);
     const scale = this._getCheckerboardScale(cropAmount);
 
-    if (pattern && typeof ctx.save === 'function' && typeof ctx.scale === 'function') {
+    if (pattern && typeof ctx.save === 'function') {
       ctx.save();
       ctx.fillStyle = pattern;
-      // Scale around the center so the checkerboard zooms evenly
       const cx = width / 2;
       const cy = height / 2;
       ctx.translate(cx, cy);
@@ -938,6 +988,11 @@ export class LayerUI {
     }
   }
 
+  _getCheckerboardScale(cropAmount = 0) {
+    const t = Math.max(0, Math.min(1, Number.isFinite(cropAmount) ? cropAmount : 0));
+    return 1 + t * 1.2; // Scale from 1.0 to 2.2 based on crop
+  }
+
   _getCheckerPattern(ctx) {
     if (!ctx || !this._checkerPatternCanvas || typeof ctx.createPattern !== 'function') {
       return null;
@@ -952,13 +1007,6 @@ export class LayerUI {
       this._checkerPatternCache.set(ctx, pattern);
     }
     return pattern;
-  }
-
-  _getCheckerboardScale(cropAmount = 0) {
-    const t = Math.max(0, Math.min(1, Number.isFinite(cropAmount) ? cropAmount : 0));
-    const minScale = 1.0;
-    const maxScale = 2.2;
-    return minScale + (maxScale - minScale) * t;
   }
 
   /**

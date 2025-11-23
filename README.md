@@ -395,6 +395,8 @@ Enable or disable automatic layer resizing when canvas size changes.
 **Parameters:**
 - `enabled` (boolean) - Auto-resize state
 
+Canvas-synced layers now track both canvas dimensions and `pixelDensity()`. Layers that were created or resized with custom `width`, `height`, or `density` stay untouched so you can maintain bespoke render targets.
+
 ---
 
 #### `dispose()`
@@ -427,6 +429,10 @@ layers.createUI({
   width: 320
 });
 ```
+
+**Helpful options:**
+- `thumbnailAutoUpdate` (boolean, default `false`) — When `true`, thumbnails update every frame. When `false` (default), thumbnails only refresh when clicked.
+- `thumbnailUpdateEvery` (number, default `0`) — Update thumbnails every N frames. Set to `30` for updates twice per second at 60fps. When `0`, updates only occur on click (unless `thumbnailAutoUpdate` is `true`).
 
 **UI Features:**
 - **Layer thumbnails**: Visual previews of each layer's content
@@ -471,6 +477,10 @@ See [examples/02-blend-modes.html](examples/02-blend-modes.html) for interactive
 ### Thumbnail Cropping Showcase
 
 See [examples/03-thumbnail-cropping/index.html](examples/03-thumbnail-cropping/index.html) to watch the Layer UI crop thumbnails by finding the smallest box of non-transparent pixels, adding gentle padding, and smoothing the result over a few frames.
+
+### Full-Window Auto Resize
+
+See [examples/04-full-window/index.html](examples/04-full-window/index.html) for a responsive sketch that drives `resizeCanvas()` from the built-in `windowResized()` callback so every framebuffer and the compositor stay razor sharp across window and pixel-density changes.
 
 ## Performance Tips
 

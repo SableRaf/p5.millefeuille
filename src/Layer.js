@@ -24,11 +24,16 @@ export class Layer {
     this.zIndex = opts.zIndex !== undefined ? opts.zIndex : id;
 
     // Framebuffer options
-    this.width = opts.width || this.p.width;
-    this.height = opts.height || this.p.height;
-    this.density = opts.density || this.p.pixelDensity();
+    this.width = opts.width ?? this.p.width;
+    this.height = opts.height ?? this.p.height;
+    this.density = opts.density ?? this.p.pixelDensity();
     this.depth = opts.depth;
     this.antialias = opts.antialias;
+
+    // Flag layers that opted into custom sizing to protect them from auto-resize
+    this.customSize = opts.width != null ||
+      opts.height != null ||
+      opts.density != null;
 
     // Mask reference (can be p5.Framebuffer or p5.Image)
     this.mask = null;
@@ -160,9 +165,16 @@ export class Layer {
    * @param {number} width - New width
    * @param {number} height - New height
    */
-  resize(width, height) {
+  resize(width, height, density = this.density) {
     this.width = width;
     this.height = height;
+    this.density = density;
+
+    // Keep track of whether the layer is canvas-synced or intentionally customized
+    const matchesCanvas = width === this.p.width &&
+      height === this.p.height &&
+      density === this.p.pixelDensity();
+    this.customSize = !matchesCanvas;
 
     // Dispose old framebuffer
     if (this.framebuffer) {
@@ -222,7 +234,9 @@ export class Layer {
       hasMask: !!this.mask,
       hasBeenDrawnTo: this.hasBeenDrawnTo,
       width: this.width,
-      height: this.height
+      height: this.height,
+      density: this.density,
+      customSize: this.customSize
     };
   }
 }

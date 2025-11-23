@@ -4,9 +4,15 @@ export function createP5Stub() {
   const stub = {
     width: 800,
     height: 600,
+    _pixelDensity: 1,
     _renderer: { drawingContext: new global.WebGLRenderingContext() },
     _removeSignal: controller.signal,
-    pixelDensity: () => 1,
+    pixelDensity() {
+      return this._pixelDensity;
+    },
+    setPixelDensity(value) {
+      this._pixelDensity = value;
+    },
     createShader: jest.fn(() => ({})),
     push: jest.fn(),
     pop: jest.fn(),
@@ -23,14 +29,15 @@ export function createP5Stub() {
     BLEND: 'BLEND'
   };
 
-  stub.createFramebuffer = jest.fn(() => {
+  stub.createFramebuffer = jest.fn((options = {}) => {
     const canvas = document.createElement('canvas');
-    canvas.width = stub.width;
-    canvas.height = stub.height;
+    canvas.width = options.width ?? stub.width;
+    canvas.height = options.height ?? stub.height;
 
     return {
       width: canvas.width,
       height: canvas.height,
+      density: options.density ?? stub._pixelDensity,
       canvas,
       begin: jest.fn(),
       end: jest.fn(),
