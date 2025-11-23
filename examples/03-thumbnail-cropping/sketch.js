@@ -29,7 +29,7 @@ function setup() {
 
   rectangleState = createRectangleState();
 
-  layers.createUI({ position: 'top-right', width: 320, thumbnailAutoUpdate: true });
+  layers.createUI({ position: 'top-right', width: 320, thumbnailAutoUpdate: true, thumbnailUpdateEvery: 10 });
 }
 
 function draw() {
