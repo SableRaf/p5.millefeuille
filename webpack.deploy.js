@@ -60,6 +60,18 @@ module.exports = {
         return html;
       },
     }),
+    new HtmlWebpackPlugin({
+      template: './examples/04-full-window/index.html',
+      filename: '04-full-window/index.html',
+      inject: false,
+      templateContent: ({ htmlWebpackPlugin }) => {
+        const template = fs.readFileSync('./examples/04-full-window/index.html', 'utf-8');
+        const timestampScript = fs.readFileSync('./src/utils/buildTimestamp.js', 'utf-8');
+        let html = template.replace(/\.\.\/(\.\.\/)??(dist|lib)\//g, '../lib/');
+        html = html.replace('</head>', `  <script>${timestampScript}</script>\n</head>`);
+        return html;
+      },
+    }),
     new CopyWebpackPlugin({
       patterns: [
         {
@@ -96,6 +108,13 @@ module.exports = {
           },
         },
         {
+          from: 'examples/04-full-window',
+          to: '04-full-window',
+          globOptions: {
+            ignore: ['**/index.html', '**/sketch.js'],
+          },
+        },
+        {
           from: 'examples/01-basic/sketch.js',
           to: '01-basic/sketch.js',
           transform(content) {
@@ -112,6 +131,13 @@ module.exports = {
         {
           from: 'examples/03-thumbnail-cropping/sketch.js',
           to: '03-thumbnail-cropping/sketch.js',
+          transform(content) {
+            return content.toString().replace(/\.\.\/\.\.\/dist\//g, '../lib/');
+          },
+        },
+        {
+          from: 'examples/04-full-window/sketch.js',
+          to: '04-full-window/sketch.js',
           transform(content) {
             return content.toString().replace(/\.\.\/\.\.\/dist\//g, '../lib/');
           },
