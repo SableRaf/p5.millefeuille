@@ -10,8 +10,10 @@
 - [x] Investigate [Violation] `'keydown' handler took 197ms` when moving layers in LayerUI with the keyboard (DOM-swap + thumbnail queue landed 2025-11-22)
 - [x] Add tests for LayerSystem and LayerUI components using Jest and JSDOM
 - [x] Crop layer thumbnails to non-transparent bounds with padding. If animated, use the largest frame's bounds with a sliding window to find the max extents across frames and avoid jumpy thumbnails.
+- [x] Add UI to the blend mode example to switch blend mode for all layers (using p5.dom in the sketch itself). Make sure the LayerUI still shows the correct blend mode for each layer.
 
 ## Ready for work
+- [ ] Mark the thumbnails for update after a resize of the canvas or layers
 - [ ] Bundle should create a zipped version of the library files for easier download
 - [ ] Change instance mode example to have multiple sketches on the same page all using p5.millefeuille
 - [ ] Add JSDoc comments to all public methods and properties

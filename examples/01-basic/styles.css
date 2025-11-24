@@ -11,11 +11,26 @@ body {
   flex-direction: column;
 }
 
+a {
+  color: #66ccff;
+  text-decoration: none;
+}
+
+.info strong {
+  color: #6cf;
+}
+
 canvas {
   border: 1px solid #444;
 }
 
 .info {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #aaa;
+}
+
+.credit {
   margin-top: 20px;
   text-align: center;
   color: #aaa;

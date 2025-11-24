@@ -1,8 +1,87 @@
 // No imports needed - library auto-registered via script tag
 
-let ls; // Layer system 
+let ls; // Layer system
 let redGradient, greenGradient, blueGradient; // Gradient graphics
 let backgroundGraphic; // Background graphic
+let blendModeSelect; // Dropdown to switch blend mode for all ellipse layers
+
+window.setup = function() {
+  createCanvas(600, 600, WEBGL);
+
+  // Create background graphic once
+  backgroundGraphic = createBackgroundGradient(600, 600);
+
+  // Create gradient ellipse graphics (2D graphics buffers)
+  redGradient = createGradientEllipse([255, 0, 0], 200, 560, 'redEllipse');
+  greenGradient = createGradientEllipse([0, 255, 0], 200, 560, 'greenEllipse');
+  blueGradient = createGradientEllipse([0, 0, 255], 200, 560, 'blueEllipse');
+
+  // Create the layer system
+  ls = createLayerSystem();
+
+  // Create a background layer with gradient
+  ls.createLayer('Background');
+  
+  // Create three ellipse layers matching MDN example
+  // Rotated at -30°, 90°, and 210° like the CSS example
+  ls.createLayer('Red Ellipse')
+    .setBlendMode(BlendModes.NORMAL);
+  
+  ls.createLayer('Green Ellipse')
+    .setBlendMode(BlendModes.NORMAL);
+  
+  ls.createLayer('Blue Ellipse')
+    .setBlendMode(BlendModes.NORMAL);
+
+  // Create the UI panel to control layers
+  ls.createUI();
+
+  createBlendModeSelect(ls);
+};
+
+window.draw = function() {
+  // Background - render the pre-created gradient
+  ls.begin('Background');
+  clear();
+  push();
+  imageMode(CENTER);
+  image(backgroundGraphic, 0, 0);
+  pop();
+  ls.end();
+
+  // Red ellipse - rotated -30 degrees
+  ls.begin('Red Ellipse');
+  clear();
+  push();
+  rotate(radians(30));
+  imageMode(CENTER);
+  image(redGradient, 0, 0);
+  pop();
+  ls.end();
+
+  // Green ellipse - rotated 90 degrees
+  ls.begin('Green Ellipse');
+  clear();
+  push();
+  rotate(radians(90));
+  imageMode(CENTER);
+  image(greenGradient, 0, 0);
+  pop();
+  ls.end();
+
+  // Blue ellipse - rotated 210 degrees
+  ls.begin('Blue Ellipse');
+  clear();
+  push();
+  rotate(radians(150));
+  imageMode(CENTER);
+  image(blueGradient, 0, 0);
+  pop();
+  ls.end();
+
+  // Composite all layers
+  ls.render();
+};
 
 // Helper function to create a gradient ellipse graphic
 function createGradientEllipse(fromColor, w, h, name='gradientEllipse') {
@@ -93,78 +172,100 @@ function createBackgroundGradient(w, h, name='backgroundGradient') {
   return g;
 }
 
-window.setup = function() {
-  createCanvas(600, 600, WEBGL);
+function createBlendModeSelect(layerSystem) {
+  // Create a dropdown to change blend mode for all ellipse layers
+  const controlContainer = createDiv();
+  controlContainer.style('margin', '16px');
+  controlContainer.style('padding', '12px 16px');
+  controlContainer.style('background', 'rgba(255, 255, 255, 0.08)');
+  controlContainer.style('border-radius', '8px');
+  controlContainer.style('display', 'inline-flex');
+  controlContainer.style('align-items', 'center');
+  controlContainer.style('gap', '12px');
+  controlContainer.parent(select('.info'));
 
-  // Create background graphic once
-  backgroundGraphic = createBackgroundGradient(600, 600);
+  const label = createSpan('Set blend mode globally');
+  label.style('font-weight', '600');
+  label.style('color', '#e8e8e8');
+  label.style('font-size', '14px');
+  label.parent(controlContainer);
 
-  // Create gradient ellipse graphics (2D graphics buffers)
-  redGradient = createGradientEllipse([255, 0, 0], 200, 560, 'redEllipse');
-  greenGradient = createGradientEllipse([0, 255, 0], 200, 560, 'greenEllipse');
-  blueGradient = createGradientEllipse([0, 0, 255], 200, 560, 'blueEllipse');
+  // Helper to style arrow buttons
+  function styleArrowButton(btn) {
+    btn.style('background', 'rgba(0, 0, 0, 0.4)');
+    btn.style('border', '1px solid rgba(255, 255, 255, 0.2)');
+    btn.style('border-radius', '6px');
+    btn.style('color', '#e8e8e8');
+    btn.style('width', '32px');
+    btn.style('height', '34px');
+    btn.style('font-size', '14px');
+    btn.style('cursor', 'pointer');
+    btn.style('transition', 'all 0.15s');
+  }
 
-  // Create the layer system
-  ls = createLayerSystem();
+  // Left arrow button
+  const leftArrow = createButton('◀');
+  leftArrow.parent(controlContainer);
+  styleArrowButton(leftArrow);
 
-  // Create a background layer with gradient
-  ls.createLayer('Background');
-  
-  // Create three ellipse layers matching MDN example
-  // Rotated at -30°, 90°, and 210° like the CSS example
-  ls.createLayer('Red Ellipse')
-    .setBlendMode(BlendModes.NORMAL);
-  
-  ls.createLayer('Green Ellipse')
-    .setBlendMode(BlendModes.NORMAL);
-  
-  ls.createLayer('Blue Ellipse')
-    .setBlendMode(BlendModes.NORMAL);
+  blendModeSelect = createSelect();
+  blendModeSelect.parent(controlContainer);
+  blendModeSelect.style('background', 'rgba(0, 0, 0, 0.4)');
+  blendModeSelect.style('border', '1px solid rgba(255, 255, 255, 0.2)');
+  blendModeSelect.style('border-radius', '6px');
+  blendModeSelect.style('color', '#e8e8e8');
+  blendModeSelect.style('padding', '8px 12px');
+  blendModeSelect.style('font-size', '14px');
+  blendModeSelect.style('cursor', 'pointer');
+  blendModeSelect.style('outline', 'none');
+  blendModeSelect.style('min-width', '140px');
+  blendModeSelect.style('appearance', 'none');
+  blendModeSelect.style('background-image', 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23e8e8e8\' width=\'24px\' height=\'24px\'%3E%3Cpath d=\'M7 10l5 5 5-5z\'/%3E%3C/svg%3E")');
+  blendModeSelect.style('background-repeat', 'no-repeat');
+  blendModeSelect.style('background-position', 'right 8px center');
+  blendModeSelect.style('background-size', '16px 16px');
 
-  // Create the UI panel to control layers
-  ls.createUI();
-};
+  // Right arrow button
+  const rightArrow = createButton('▶');
+  rightArrow.parent(controlContainer);
+  styleArrowButton(rightArrow);
 
-window.draw = function() {
-  // Background - render the pre-created gradient
-  ls.begin('Background');
-  clear();
-  push();
-  imageMode(CENTER);
-  image(backgroundGraphic, 0, 0);
-  pop();
-  ls.end();
+  // Add all blend mode options
+  const blendModeKeys = Object.keys(BlendModes);
+  blendModeKeys.forEach(mode => {
+    // Format the label: SOFT_LIGHT -> Soft Light
+    const formattedName = mode.split('_').map(word =>
+      word.charAt(0) + word.slice(1).toLowerCase()
+    ).join(' ');
+    blendModeSelect.option(formattedName, BlendModes[mode]);
+  });
 
-  // Red ellipse - rotated -30 degrees
-  ls.begin('Red Ellipse');
-  clear();
-  push();
-  rotate(radians(30));
-  imageMode(CENTER);
-  image(redGradient, 0, 0);
-  pop();
-  ls.end();
+  // Function to apply blend mode to all ellipse layers
+  function applyBlendMode(mode) {
+    ls.setBlendMode('Red Ellipse', mode);
+    ls.setBlendMode('Green Ellipse', mode);
+    ls.setBlendMode('Blue Ellipse', mode);
+    ls.ui.syncState();
+  }
 
-  // Green ellipse - rotated 90 degrees
-  ls.begin('Green Ellipse');
-  clear();
-  push();
-  rotate(radians(90));
-  imageMode(CENTER);
-  image(greenGradient, 0, 0);
-  pop();
-  ls.end();
+  // Handle blend mode change from dropdown
+  blendModeSelect.changed(() => {
+    applyBlendMode(blendModeSelect.value());
+  });
 
-  // Blue ellipse - rotated 210 degrees
-  ls.begin('Blue Ellipse');
-  clear();
-  push();
-  rotate(radians(150));
-  imageMode(CENTER);
-  image(blueGradient, 0, 0);
-  pop();
-  ls.end();
+  // Handle left arrow click (previous blend mode)
+  leftArrow.mousePressed(() => {
+    const currentIndex = blendModeKeys.findIndex(k => BlendModes[k] === blendModeSelect.value());
+    const newIndex = (currentIndex - 1 + blendModeKeys.length) % blendModeKeys.length;
+    blendModeSelect.selected(BlendModes[blendModeKeys[newIndex]]);
+    applyBlendMode(blendModeSelect.value());
+  });
 
-  // Composite all layers
-  ls.render();
-};
+  // Handle right arrow click (next blend mode)
+  rightArrow.mousePressed(() => {
+    const currentIndex = blendModeKeys.findIndex(k => BlendModes[k] === blendModeSelect.value());
+    const newIndex = (currentIndex + 1) % blendModeKeys.length;
+    blendModeSelect.selected(BlendModes[blendModeKeys[newIndex]]);
+    applyBlendMode(blendModeSelect.value());
+  });
+}

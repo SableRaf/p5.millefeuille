@@ -4,7 +4,7 @@ let fruitArt;
 let gamepadArt;
 
 async function setup() {
-  createCanvas(800, 600, WEBGL);
+  createCanvas(800, 600, WEBGL).parent('canvas-container');
   imageMode(CENTER);
 
   // Load images with callbacks instead of async/await
