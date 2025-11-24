@@ -30,6 +30,19 @@ function setup() {
   rectangleState = createRectangleState();
 
   layers.createUI({ position: 'top-right', width: 320, thumbnailAutoUpdate: true, thumbnailUpdateEvery: 10 });
+
+  // Connect the update interval slider
+  const slider = document.getElementById('update-interval');
+  const valueDisplay = document.getElementById('interval-value');
+  if (slider && valueDisplay) {
+    slider.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value, 10);
+      valueDisplay.textContent = value;
+      if (layers.ui) {
+        layers.ui.options.thumbnailUpdateEvery = value;
+      }
+    });
+  }
 }
 
 function draw() {
