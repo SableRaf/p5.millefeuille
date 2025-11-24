@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thumbnail Cropping Showcase - p5.millefeuille</title><link rel="stylesheet" href="styles.css"><script src="../lib/p5.2.1.1.js"></script><script src="../lib/p5.millefeuille.js?v=0.1.0"></script><script src="sketch.js"></script><script>/**
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live Thumbnail Updates - p5.millefeuille</title><link rel="stylesheet" href="styles.css"><script src="../lib/p5.2.1.1.js"></script><script src="../lib/p5.millefeuille.js?v=0.1.0"></script><script src="sketch.js"></script><script>/**
  * Logs deployment information to console
  * Shows build date, time, and duration since deployment
  */
@@ -56,4 +56,4 @@
 
     console.log('📅 Last updated on ' + dateStr + ' at ' + timeStr + (tzName ? ' ' + tzName : '') + ' (' + durationStr + ')');
   }
-})();</script></head><body><div class="info"><h1>Thumbnail Cropping Showcase</h1><p>Watch the Layer Panel crop thumbnails to the animated content.</p><p>The UI looks for the smallest area that contains non-transparent pixels, adds a tiny safety margin, and remembers the last few frames so the crop does not wobble.</p></div></body></html>
+})();</script></head><body><div class="info"><h1>Live Thumbnails Showcase</h1><p>Watch the Layer Panel update live thumbnails that crop to the animated content</p><p>The UI looks for the smallest area that contains non-transparent pixels, adds a tiny safety margin and uses that as the thumbnail. Update speed can be adjusted with the <strong>Thumbnail Update Interval</strong> slider. Note that more frequent updates may impact performance.</p><div class="control"><label for="update-interval">Thumbnail Update Interval: <span id="interval-value">10</span> frames</label> <input type="range" id="update-interval" min="1" max="60" value="10"></div></div></body></html>
