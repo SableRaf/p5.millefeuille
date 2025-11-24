@@ -11,6 +11,7 @@
 - [x] Add tests for LayerSystem and LayerUI components using Jest and JSDOM
 - [x] Crop layer thumbnails to non-transparent bounds with padding. If animated, use the largest frame's bounds with a sliding window to find the max extents across frames and avoid jumpy thumbnails.
 - [x] Add UI to the blend mode example to switch blend mode for all layers (using p5.dom in the sketch itself). Make sure the LayerUI still shows the correct blend mode for each layer.
+- [x] Smoother background texture in the blend modes example (currently pixelated)
 
 ## Ready for work
 - [ ] Mark the thumbnails for update after a resize of the canvas or layers

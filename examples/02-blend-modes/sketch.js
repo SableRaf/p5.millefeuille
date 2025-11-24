@@ -109,66 +109,73 @@ function createGradientEllipse(fromColor, w, h, name='gradientEllipse') {
   return g;
 }
 
-// Helper function to create the background gradient
-function createBackgroundGradient(w, h, name='backgroundGradient') {
+// Helper function to create the background gradient using a shader
+function createBackgroundGradient(w, h) {
+  // Create a WEBGL graphics buffer for shader rendering
+  const g = createGraphics(w, h, WEBGL);
 
-  const canvas = createElement('canvas');
-
-  const g = createGraphics(w, h, canvas.elt);
-
-  canvas.attribute('id', name);
-  canvas.attribute('class', 'p5.Graphics');
-  canvas.attribute('width', w);
-  canvas.attribute('height', h);
-  
-  // Create a multi-color gradient background
-  g.noStroke();
-  const steps = 100;
-  for (let y = 0; y < steps; y++) {
-    const yPos = map(y, 0, steps, 0, h);
-    const heightStep = h / steps;
-    
-    // Vertical gradient: yellow -> magenta -> cyan
-    let r, g_val, b;
-    if (y < steps / 2) {
-      // yellow to magenta
-      const t = y / (steps / 2);
-      r = lerp(255, 255, t);
-      g_val = lerp(255, 0, t);
-      b = lerp(0, 255, t);
-    } else {
-      // magenta to cyan
-      const t = (y - steps / 2) / (steps / 2);
-      r = lerp(255, 0, t);
-      g_val = lerp(0, 255, t);
-      b = lerp(255, 255, t);
+  // Define the shader inline
+  const vertSrc = `
+    attribute vec3 aPosition;
+    attribute vec2 aTexCoord;
+    varying vec2 vTexCoord;
+    void main() {
+      vTexCoord = aTexCoord;
+      vec4 positionVec4 = vec4(aPosition, 1.0);
+      positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
+      gl_Position = positionVec4;
     }
-    
-    // Horizontal gradient overlay (black to transparent to white)
-    for (let x = 0; x < steps; x++) {
-      const xPos = map(x, 0, steps, 0, w);
-      const widthStep = w / steps;
-      
-      let mixR = r, mixG = g_val, mixB = b;
-      if (x < steps / 2) {
+  `;
+
+  const fragSrc = `
+    precision mediump float;
+    varying vec2 vTexCoord;
+
+    vec3 mix3(vec3 a, vec3 b, float t) {
+      return a + (b - a) * t;
+    }
+
+    void main() {
+      vec2 uv = vTexCoord;
+
+      // Vertical gradient: yellow -> magenta -> cyan
+      vec3 yellow = vec3(1.0, 1.0, 0.0);
+      vec3 magenta = vec3(1.0, 0.0, 1.0);
+      vec3 cyan = vec3(0.0, 1.0, 1.0);
+
+      vec3 vertColor;
+      if (uv.y < 0.5) {
+        // yellow to magenta
+        float t = uv.y * 2.0;
+        vertColor = mix3(yellow, magenta, t);
+      } else {
+        // magenta to cyan
+        float t = (uv.y - 0.5) * 2.0;
+        vertColor = mix3(magenta, cyan, t);
+      }
+
+      // Horizontal gradient overlay (black to normal to white)
+      vec3 finalColor;
+      if (uv.x < 0.5) {
         // Mix with black
-        const t = x / (steps / 2);
-        mixR = lerp(0, r, t);
-        mixG = lerp(0, g_val, t);
-        mixB = lerp(0, b, t);
+        float t = uv.x * 2.0;
+        finalColor = mix3(vec3(0.0), vertColor, t);
       } else {
         // Mix with white
-        const t = (x - steps / 2) / (steps / 2);
-        mixR = lerp(r, 255, t);
-        mixG = lerp(g_val, 255, t);
-        mixB = lerp(b, 255, t);
+        float t = (uv.x - 0.5) * 2.0;
+        finalColor = mix3(vertColor, vec3(1.0), t);
       }
-      
-      g.fill(mixR, mixG, mixB);
-      g.rect(xPos, yPos, widthStep, heightStep);
+
+      gl_FragColor = vec4(finalColor, 1.0);
     }
-  }
-  
+  `;
+
+  // Create and apply the shader
+  const gradientShader = g.createShader(vertSrc, fragSrc);
+  g.shader(gradientShader);
+  g.noStroke();
+  g.rect(-w/2, -h/2, w, h);
+
   return g;
 }
 
