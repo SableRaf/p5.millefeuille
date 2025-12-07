@@ -1,7 +1,7 @@
 /**
  * p5.millefeuille v0.1.0
  * A Photoshop-like layer system for p5.js WebGL
- * https://github.com/yourusername/p5.millefeuille
+ * https://github.com/SableRaf/p5.millefeuille
  *
  * Licensed under LGPL-2.1
  */
@@ -2693,3 +2693,4 @@
   Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
+//# sourceMappingURL=p5.millefeuille.js.map

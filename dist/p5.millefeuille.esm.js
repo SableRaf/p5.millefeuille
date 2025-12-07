@@ -1,7 +1,7 @@
 /**
  * p5.millefeuille v0.1.0
  * A Photoshop-like layer system for p5.js WebGL
- * https://github.com/yourusername/p5.millefeuille
+ * https://github.com/SableRaf/p5.millefeuille
  *
  * Licensed under LGPL-2.1
  */
@@ -2675,3 +2675,4 @@ if (typeof window !== 'undefined' && typeof window.p5 !== 'undefined') {
 }
 
 export { BlendModes, Compositor, DEFAULT_LAYER_OPTIONS, Layer, LayerSystem, LayerUI, VERSION, millefeuilleAddon as default, getBlendModeIndex };
+//# sourceMappingURL=p5.millefeuille.esm.js.map
