@@ -20,7 +20,7 @@ function shaderPlugin() {
 const banner = `/**
  * p5.millefeuille v${JSON.parse(readFileSync('./package.json')).version}
  * A Photoshop-like layer system for p5.js WebGL
- * https://github.com/yourusername/p5.millefeuille
+ * https://github.com/SableRaf/p5.millefeuille
  *
  * Licensed under LGPL-2.1
  */`;
@@ -34,6 +34,7 @@ export default [
       format: 'umd',
       name: 'p5Millefeuille',
       banner,
+      sourcemap: true,
       globals: {
         p5: 'p5'
       }
@@ -56,6 +57,7 @@ export default [
       format: 'umd',
       name: 'p5Millefeuille',
       banner,
+      sourcemap: true,
       globals: {
         p5: 'p5'
       }
@@ -81,7 +83,8 @@ export default [
     output: {
       file: 'dist/p5.millefeuille.esm.js',
       format: 'es',
-      banner
+      banner,
+      sourcemap: true
     },
     external: ['p5'],
     plugins: [
