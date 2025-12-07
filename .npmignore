@@ -1,0 +1,43 @@
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+Thumbs.db
+
+# Documentation and examples
+examples/
+tutorials/
+.gh-pages/
+AGENTS.md
+PRD.md
+TODO.md
+PLAN.md
+
+# Build and test configuration
+rollup.config.js
+webpack.deploy.js
+babel.config.cjs
+jest.config.cjs
+.eslintrc.json
+
+# Test files
+test/
+coverage/
+
+# Development dependencies
+node_modules/
+
+# Temporary files
+*.log
+npm-debug.log*
+*.tmp
+.cache/
+.webpack-dummy.js
+.playwright-mcp/
+.claude/
+
+# Build artifacts we don't need in the package
+*.zip
