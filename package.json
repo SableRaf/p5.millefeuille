@@ -2,6 +2,9 @@
   "name": "p5.millefeuille",
   "version": "0.2.1-alpha",
   "description": "A Photoshop-like layer system for p5.js WebGL using framebuffers",
+  "publishedVersions": [
+    "0.2.1-alpha"
+  ],
   "main": "dist/p5.millefeuille.js",
   "module": "dist/p5.millefeuille.esm.js",
   "unpkg": "dist/p5.millefeuille.min.js",

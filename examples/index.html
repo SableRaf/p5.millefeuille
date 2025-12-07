@@ -18,6 +18,37 @@
     </header>
 
     <main>
+      <section class="cdn-section">
+        <div class="cdn-container">
+          <div class="version-selector-container">
+            <label for="version-select">Version:</label>
+            <select id="version-select" class="version-select">
+              <option value="latest" selected>latest</option>
+              <!-- VERSIONS_PLACEHOLDER -->
+            </select>
+          </div>
+
+          <div class="cdn-code-block">
+            <code id="cdn-code">https://cdn.jsdelivr.net/npm/p5.millefeuille@latest/dist/p5.millefeuille.min.js</code>
+            <button class="copy-btn" id="copy-btn" aria-label="Copy CDN link">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.5 2.5h-2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2m-6-8h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="cdn-info">
+          <div class="cdn-info-item">
+            <strong>Minified:</strong> ~60KB gzipped
+          </div>
+          <div class="cdn-info-item">
+            <strong>Requires:</strong> p5.js 2.1.1+ (WebGL mode)
+          </div>
+        </div>
+      </section>
+
       <div class="examples-grid">
         <a href="01-basic/" class="example-card">
           <div class="example-number">01</div>
@@ -59,5 +90,60 @@
       <p>Built with <a href="https://p5js.org" target="_blank">p5.js</a> • Licensed under LGPL-2.1</p>
     </footer>
   </div>
+
+  <script>
+    // CDN version selector and copy functionality
+    const versionSelect = document.getElementById('version-select');
+    const cdnCode = document.getElementById('cdn-code');
+    const copyBtn = document.getElementById('copy-btn');
+    const copyText = copyBtn.querySelector('.copy-text');
+
+    // Update CDN URL when version changes
+    versionSelect.addEventListener('change', (e) => {
+      const version = e.target.value;
+      const url = `https://cdn.jsdelivr.net/npm/p5.millefeuille@${version}/dist/p5.millefeuille.min.js`;
+      cdnCode.textContent = url; // Just the URL, not the script tag
+    });
+
+    // Copy to clipboard functionality (without script tags)
+    copyBtn.addEventListener('click', async () => {
+      const url = cdnCode.textContent;
+      const text = url;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        copyText.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+
+        setTimeout(() => {
+          copyText.textContent = 'Copy';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+
+        try {
+          document.execCommand('copy');
+          copyText.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+
+          setTimeout(() => {
+            copyText.textContent = 'Copy';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+
+        document.body.removeChild(textArea);
+      }
+    });
+  </script>
 </body>
 </html>

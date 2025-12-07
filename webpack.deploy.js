@@ -22,6 +22,22 @@ module.exports = {
       template: './examples/index.html',
       filename: 'index.html',
       inject: false,
+      templateContent: ({ htmlWebpackPlugin }) => {
+        const template = fs.readFileSync('./examples/index.html', 'utf-8');
+        const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
+
+        // Generate version options from publishedVersions array
+        const versions = pkg.publishedVersions || [pkg.version];
+        const versionOptions = versions.map(v =>
+          `<option value="${v}">${v}</option>`
+        ).join('\n              ');
+
+        // Replace placeholder with actual version options
+        return template.replace(
+          '<!-- VERSIONS_PLACEHOLDER -->',
+          versionOptions
+        );
+      },
     }),
     // Individual example pages
     new HtmlWebpackPlugin({
