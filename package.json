@@ -23,8 +23,9 @@
     "compositing",
     "creative-coding"
   ],
-  "author": "",
+  "author": "Raphaël de Courville <raphael.de.courville@gmail.com>",
   "license": "LGPL-2.1",
+  "homepage": "https://sableraf.github.io/p5.millefeuille/",
   "peerDependencies": {
     "p5": "^2.1.1"
   },
@@ -50,7 +51,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/p5.millefeuille.git"
+    "url": "https://github.com/SableRaf/p5.millefeuille.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SableRaf/p5.millefeuille/issues"
   },
   "files": [
     "dist",
