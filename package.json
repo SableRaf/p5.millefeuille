@@ -1,6 +1,6 @@
 {
   "name": "p5.millefeuille",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "A Photoshop-like layer system for p5.js WebGL using framebuffers",
   "main": "dist/p5.millefeuille.js",
   "module": "dist/p5.millefeuille.esm.js",
@@ -51,7 +51,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SableRaf/p5.millefeuille.git"
+    "url": "git+https://github.com/SableRaf/p5.millefeuille.git"
   },
   "bugs": {
     "url": "https://github.com/SableRaf/p5.millefeuille/issues"

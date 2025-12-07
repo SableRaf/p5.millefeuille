@@ -13,7 +13,7 @@ export { LayerUI } from './LayerUI.js';
 export { BlendModes, getBlendModeIndex, DEFAULT_LAYER_OPTIONS } from './constants.js';
 
 // Version
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.1';
 
 /**
  * p5.js addon registration function

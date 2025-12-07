@@ -1,5 +1,5 @@
 /**
- * p5.millefeuille v0.1.0
+ * p5.millefeuille v0.2.1
  * A Photoshop-like layer system for p5.js WebGL
  * https://github.com/SableRaf/p5.millefeuille
  *
@@ -2646,7 +2646,7 @@
 
 
   // Version
-  const VERSION = '0.1.0';
+  const VERSION = '0.2.1';
 
   /**
    * p5.js addon registration function
