@@ -5,45 +5,31 @@
 
 **p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js WebGL sketches. Built on top of `p5.Framebuffer`, it provides an intuitive API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
 
-## What is "millefeuille"?
-"Millefeuille" is French for "a thousand layers," referring to a classic French pastry made of many thin layers of puff pastry and cream. Just like the dessert, this library allows you to build complex sketches by stacking multiple layers of graphics.
+## Installation
+
+In your p5.js project, add p5.millefeuille to your `index.html` using jsdelivr CDN:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/p5.millefeuille@latest/dist/p5.millefeuille.min.js"></script>
+```
+
+## Requirements
+
+- p5.js 2.1.1 or higher (for stable `createFramebuffer` API)
+- WebGL mode (`createCanvas(w, h, WEBGL)`)
 
 ## Motivation
-In creative coding, layering is a powerful technique for organizing and composing visual elements. However, p5.js's WebGL mode lacks a built-in layer system similar to Photoshop or other graphics software. **p5.millefeuille** fills this gap by providing an easy-to-use layer management system that integrates seamlessly with p5.js, enabling artists and developers to create rich, layered visuals with minimal effort.
+I wanted a layer system that felt familiar to anyone who's used image editing software like Photoshop, GIMP, Procreate, etc, but tailored for creative coding in p5.js. 
 
 ## What is this not
 Millefeuille is not an image editing library. It does not provide tools for pixel-level manipulation, filters, or effects like Photoshop, GIMP, Krita, or other dedicated image editors. Instead, it focuses on managing multiple render targets (layers) and compositing them efficiently using WebGL shaders.
 
 ## Features
+- **Layer UI**: Optional interactive panel for controlling layers at runtime
 - **Layer Management**: Create, remove, and reorder layers with ease
 - **14 Blend Modes**: Normal, Multiply, Screen, Add, Subtract, Overlay, Soft Light, Hard Light, Color Dodge, Color Burn, Darken, Lighten, Difference, Exclusion
-- **Layer Properties**: Control visibility, opacity, and z-index
+- **Opacity and Visibility**: Set per-layer opacity for transparency effects and toggle visibility
 - **Masking**: Apply grayscale masks to layers for selective revealing
-- **Performance**: Optimized shader-based compositing using WebGL
-- **Auto-resize**: Automatically handles canvas size changes
-- **Clean API**: Inspired by Photoshop but designed for creative coding
-- **Instance Mode**: Works in both global and instance modes
-
-## Installation
-
-### Via CDN (Script Tag)
-
-TBD
-
-### Via npm
-
-```bash
-npm install p5.millefeuille
-```
-
-Then in your code:
-
-```javascript
-import p5 from 'p5';
-import millefeuilleAddon from 'p5.millefeuille';
-
-p5.registerAddon(millefeuilleAddon);
-```
 
 ## Quick Start
 
@@ -490,19 +476,6 @@ See [examples/04-full-window/index.html](examples/04-full-window/index.html) for
 4. **Disable unused layers**: Set `visible: false` instead of removing
 5. **Use appropriate blend modes**: NORMAL is fastest
 
-## Browser Support
-
-Requires WebGL support (WebGL 1.0 or 2.0). Works in all modern browsers:
-- Chrome 56+
-- Firefox 51+
-- Safari 11+
-- Edge 79+
-
-## Requirements
-
-- p5.js 2.1.1 or higher (for stable `createFramebuffer` API)
-- WebGL mode (`createCanvas(w, h, WEBGL)`)
-
 ## Architecture
 
 - **LayerSystem**: Manages the layer stack and coordinates rendering
@@ -518,20 +491,19 @@ Requires WebGL support (WebGL 1.0 or 2.0). Works in all modern browsers:
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR on [GitHub](https://github.com/yourusername/p5.millefeuille).
+Contributions welcome! Please [open an issue](https://github.com/sableraf/p5.millefeuille/issues) on GitHub.
 
 ## License
 
 LGPL-2.1 License - see [LICENSE](LICENSE) file for details
 
-## Credits
+## Similar Projects and Inspirations
 
-Inspired by:
-- Photoshop's layer system
 - [p5.layers](https://github.com/osteele/p5.libs/tree/main/p5.layers) by Oliver Steele (2D renderer)
 - p5.js [Layered Rendering tutorial](https://p5js.org/tutorials/layered-rendering-with-framebuffers/)
 
-Built with love for the creative coding community.
+## What is "millefeuille"?
+"Millefeuille" is French for "a thousand layers," referring to a classic French pastry made of many thin layers of puff pastry and cream.
 
 ---
 
