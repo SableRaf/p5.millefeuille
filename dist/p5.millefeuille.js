@@ -1,5 +1,5 @@
 /**
- * p5.millefeuille v0.2.1
+ * p5.millefeuille v0.2.1-alpha
  * A Photoshop-like layer system for p5.js WebGL
  * https://github.com/SableRaf/p5.millefeuille
  *
