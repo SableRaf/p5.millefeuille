@@ -7,6 +7,10 @@ import { LayerUI } from './LayerUI.js';
  * Main layer system manager
  */
 export class LayerSystem {
+
+  #lastCanvasWidth;
+  #lastCanvasHeight;
+  #lastPixelDensity;
   /**
    * @param {p5} p5Instance - The p5.js instance
    */
@@ -34,9 +38,9 @@ export class LayerSystem {
 
     // Track if we're auto-resizing
     this.autoResize = true;
-    this._lastCanvasWidth = this.p.width;
-    this._lastCanvasHeight = this.p.height;
-    this._lastPixelDensity = this.p.pixelDensity();
+    this.#lastCanvasWidth = this.p.width;
+    this.#lastCanvasHeight = this.p.height;
+    this.#lastPixelDensity = this.p.pixelDensity();
   }
 
   /**
@@ -337,22 +341,22 @@ export class LayerSystem {
    * Checks if canvas was resized and updates layers accordingly
    * @private
    */
-  _checkResize() {
+  _checkResize() {    
     const currentWidth = this.p.width;
     const currentHeight = this.p.height;
     const currentDensity = this.p.pixelDensity();
 
-    const sizeChanged = currentWidth !== this._lastCanvasWidth ||
-      currentHeight !== this._lastCanvasHeight;
-    const densityChanged = currentDensity !== this._lastPixelDensity;
+    const sizeChanged = currentWidth !== this.#lastCanvasWidth ||
+      currentHeight !== this.#lastCanvasHeight;
+    const densityChanged = currentDensity !== this.#lastPixelDensity;
 
     if (!sizeChanged && !densityChanged) {
       return;
     }
 
-    this._lastCanvasWidth = currentWidth;
-    this._lastCanvasHeight = currentHeight;
-    this._lastPixelDensity = currentDensity;
+    this.#lastCanvasWidth = currentWidth;
+    this.#lastCanvasHeight = currentHeight;
+    this.#lastPixelDensity = currentDensity;
 
     // Resize all canvas-synced layers
     for (const layer of this.layers.values()) {
