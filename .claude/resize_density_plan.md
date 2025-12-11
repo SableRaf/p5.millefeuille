@@ -5,7 +5,7 @@
    - Extend `Layer.resize(width, height, density?)` to store updated dimensions/density before recreating the framebuffer.
 
 2. **LayerSystem auto-resize fixes**
-   - Track `_lastPixelDensity` alongside canvas width/height.
+   - Track `#lastPixelDensity` alongside canvas width/height.
    - In `_checkResize()`, trigger when width, height, or density changes.
    - Skip `Layer.resize()` for `customSize` layers; pass new density through for others.
 
