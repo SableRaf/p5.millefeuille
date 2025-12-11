@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "checkJs": true
+  },
+  "include": [
+    "*.js",
+    "../../dist/p5.millefeuille.esm.d.ts",
+    "../../dist/global-p5.millefeuille.d.ts",
+    "../../node_modules/p5/types/global.d.ts"
+  ]
+}

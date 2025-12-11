@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "skipLibCheck": true,
+        "allowJs": true,
+        
+        //we're just here to make type-declaration file...
+        "checkJs": false,
+        
+        "declaration": true,
+        "emitDeclarationOnly":true,
+        "outDir": "./dist",
+        // "moduleResolution": "bundler",
+        //just for type-declaration generation:
+        "moduleResolution": "node",
+    },
+    "files": ["dist/p5.millefeuille.esm.js"]
+}
