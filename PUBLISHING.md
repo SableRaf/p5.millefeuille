@@ -1,140 +1,89 @@
 # Publishing p5.millefeuille to npm
 
-## ✅ Completed Pre-Publishing Tasks
+Publishing is automated via GitHub Actions using **npm Trusted Publishing (OIDC)** — no long-lived tokens or secrets required. A workflow runs automatically when a `v*` tag is pushed.
 
-1. **Package metadata updated**:
-   - ✅ Repository URL: `https://github.com/SableRaf/p5.millefeuille.git`
-   - ✅ Author: `Raphaël de Courville <raphael.de.courville@gmail.com>`
-   - ✅ Homepage: `https://sableraf.github.io/p5.millefeuille/`
-   - ✅ Bugs URL added
-   - ✅ License: LGPL-2.1
+## One-time setup: configure Trusted Publishing on npmjs.com
 
-2. **Build configuration enhanced**:
-   - ✅ Source maps enabled for all builds
-   - ✅ Banner updated with correct GitHub URL
-   - ✅ Three build outputs: UMD, minified UMD, and ES module
+> Skip this if it's already configured.
 
-3. **Package content controlled**:
-   - ✅ `.npmignore` created to exclude dev files
-   - ✅ Package includes: dist/, src/, README.md, LICENSE
-   - ✅ Package excludes: examples/, tests/, config files
+1. Go to `https://www.npmjs.com/package/p5.millefeuille/access`
+2. Under **Trusted Publishers**, add a GitHub Actions publisher:
+   - **Repository owner:** `SableRaf`
+   - **Repository name:** `p5.millefeuille`
+   - **Workflow filename:** `publish.yml` *(case-sensitive, exact match)*
+   - **Environment name:** *(leave blank)*
 
-4. **Documentation updated**:
-   - ✅ README updated with jsdelivr CDN links
-   - ✅ Installation instructions complete
+## One-time setup: untrack dist/ from git
 
-5. **Build verified**:
-   - ✅ Clean build successful
-   - ✅ Source maps generated (.map files)
-   - ✅ Package size: 226.4 kB (unpacked: 806.4 kB)
-   - ✅ 20 files included in package
+`dist/` is no longer committed. Run this once after updating `.gitignore`:
 
-## Next Steps: Publishing to npm
-
-### Step 1: Verify npm login
 ```bash
-npm whoami
-```
-Expected output: `sableraph` ✅ (already verified)
-
-### Step 2: Dry run publish (optional but recommended)
-```bash
-npm publish --dry-run
-```
-This will show you exactly what will be published without actually publishing.
-
-### Step 3: Publish to npm
-```bash
-npm publish
+git rm -r --cached dist/
+git commit -m "Stop tracking built output"
 ```
 
-### Step 4: Verify publication
-After publishing, verify on npm:
-- Visit: https://www.npmjs.com/package/p5.millefeuille
-- Check version 0.1.0 is live
+Past history still contains old build artifacts — this does not rewrite history.
 
-### Step 5: Test jsdelivr CDN
-After npm publication, jsdelivr will automatically pick up the package within a few minutes:
+## Release checklist
+
+For each release:
+
+1. Bump `"version"` in `package.json`
+2. Add the new version to the `"publishedVersions"` array in `package.json` — **CI will reject the publish if this is missing**
+3. Commit both changes
+4. Push the tag:
+   ```bash
+   git tag v<version>
+   git push origin v<version>
+   ```
+
+The workflow will then: verify the version/tag match → verify `publishedVersions` → lint → test → build → dry-run pack → publish.
+
+## What the workflow does
+
+See [`.github/workflows/publish.yml`](.github/workflows/publish.yml) for the full workflow.
+
+Key points:
+- Uses Node.js 22.14.0 (minimum required for npm Trusted Publishing)
+- `--ignore-scripts` on `npm publish` skips `prepack` — the explicit Build step already produced `dist/`
+- Version check: tag `v0.2.2-alpha` → expects `package.json` version `0.2.2-alpha`
+
+## Local development
+
+After a fresh clone, `dist/` is not present. Run either:
+
+```bash
+npm run build      # build dist/ only
+npm run examples   # builds if dist/ is absent (aborts on failure), then serves examples
+```
+
+## Optional: add an approval gate
+
+To require manual approval before publishing, create a GitHub Environment named `npm-publish` with required reviewers, then add `environment: npm-publish` to the publish job in the workflow file.
+
+## Optional: lock down npm to OIDC only
+
+After a first successful CI publish: npmjs.com → package **Settings** → **Publishing access** → "Require two-factor authentication and disallow tokens". This makes OIDC the only publish path.
+
+## Verification
+
+After pushing a tag:
+
+1. Check the **Actions** tab on GitHub — the workflow should show all steps green.
+2. Confirm the version appears at `https://www.npmjs.com/package/p5.millefeuille`.
+3. Verify the CDN link: `https://cdn.jsdelivr.net/npm/p5.millefeuille@latest/dist/p5.millefeuille.min.js`
+
+## jsdelivr CDN links
+
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5.millefeuille@0.1.0/dist/p5.millefeuille.min.js"></script>
-```
-
-## Post-Publishing Recommendations
-
-### 1. Create GitHub Release
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Then create a release on GitHub:
-- Go to: https://github.com/SableRaf/p5.millefeuille/releases/new
-- Tag version: v0.1.0
-- Release title: v0.1.0
-- Description: First public release of p5.millefeuille
-
-### 2. Update documentation
-- Add npm badge to README
-- Add jsdelivr badge to README
-- Consider adding download stats
-
-### 3. Announce
-- Share on p5.js Discord/Forum
-- Share on social media
-- Consider adding to p5.js libraries list
-
-## jsdelivr CDN Access
-
-Once published, your library will be available via jsdelivr at:
-
-### Latest version (auto-updates):
-```html
+<!-- Latest version -->
 <script src="https://cdn.jsdelivr.net/npm/p5.millefeuille@latest/dist/p5.millefeuille.min.js"></script>
+
+<!-- Specific version -->
+<script src="https://cdn.jsdelivr.net/npm/p5.millefeuille@0.2.1-alpha/dist/p5.millefeuille.min.js"></script>
 ```
 
-### Specific version (recommended for production):
-```html
-<script src="https://cdn.jsdelivr.net/npm/p5.millefeuille@0.1.0/dist/p5.millefeuille.min.js"></script>
-```
-
-### ES Module:
 ```javascript
+// ES Module
 import millefeuilleAddon from 'https://cdn.jsdelivr.net/npm/p5.millefeuille@latest/dist/p5.millefeuille.esm.js';
 ```
-
-### With version range:
-```html
-<!-- Any 0.x.x version -->
-<script src="https://cdn.jsdelivr.net/npm/p5.millefeuille@0/dist/p5.millefeuille.min.js"></script>
-```
-
-## Important Notes
-
-- **Version**: Publishing as `0.1.0` (initial release)
-- **Scope**: Publishing as unscoped package `p5.millefeuille`
-- **License**: LGPL-2.1 (allows commercial use with attribution)
-- **Package size**: ~226 KB (reasonable for a graphics library)
-- **Source maps**: Included for debugging
-
-## Troubleshooting
-
-If publish fails:
-1. Check npm login: `npm whoami`
-2. Check package name availability: `npm view p5.millefeuille`
-3. Verify package.json syntax: `npm pack --dry-run`
-4. Check npm registry status: https://status.npmjs.org/
-
-If you need to unpublish (within 72 hours):
-```bash
-npm unpublish p5.millefeuille@0.1.0
-```
-⚠️ Only use this if you made a critical error!
-
-## Ready to Publish?
-
-You're all set! When you're ready, run:
-```bash
-npm publish
-```
-
-The package will be live on npm and accessible via jsdelivr within minutes.
