@@ -23,3 +23,11 @@ coverage/
 .gh-pages/
 .webpack-dummy.js
 .playwright-mcp/
+
+# Built output — generated in CI, not committed
+dist/
+
+# LLM generated files
+.claude/commands/paul/
+.claude/paul-framework/
+.paul/

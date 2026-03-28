@@ -11,9 +11,10 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
+    "prepack": "npm run build",
     "test": "jest",
     "lint": "eslint src/**/*.js",
-    "examples": "lsof -ti:8000 | xargs kill -9 2>/dev/null || true && npx http-server . -p 8000 -o /examples/",
+    "examples": "sh -ec '[ -d dist ] || npm run build; lsof -ti:8000 | xargs kill -9 2>/dev/null || true; exec npx http-server . -p 8000 -o /examples/'",
     "predeploy": "npm run build && webpack --config webpack.deploy.js",
     "deploy": "gh-pages -d .gh-pages"
   },
