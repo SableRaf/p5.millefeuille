@@ -35,7 +35,7 @@ export function parseLayerParams(baseName, queryString) {
     const layerName = rest.slice(0, dotIndex);
     const property = rest.slice(dotIndex + 1);
 
-    if (!layerName || !property) continue;
+    if (!layerName.trim() || !property.trim()) continue;
 
     let parsed;
 

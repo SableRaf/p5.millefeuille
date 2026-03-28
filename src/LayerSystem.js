@@ -1,6 +1,5 @@
 import { Layer } from './Layer.js';
 import { Compositor } from './Compositor.js';
-import { BlendModes } from './constants.js';
 import { LayerUI } from './LayerUI.js';
 import { parseLayerParams } from './URIStateReader.js';
 
@@ -15,7 +14,7 @@ export class LayerSystem {
    */
   constructor(p5Instance, settings = {}) {
     this.p = p5Instance;
-    this._uriBaseName = settings.uriBaseName || 'layers';
+    this._uriBaseName = settings.uriBaseName ?? 'layers';
     this._uriApplied = false;
 
     // Validate WebGL mode
@@ -334,10 +333,24 @@ export class LayerSystem {
       this._uriApplied = true;
       const { layers: uriLayers, show } = parseLayerParams(this._uriBaseName);
 
+      if (show === null && uriLayers.size === 0) return;
+
+      // Build a case-insensitive name lookup for URI matching.
+      // Browsers (e.g. Chrome) canonicalize CSS keywords in URLs — "Backdrop"
+      // becomes "backdrop" because ::backdrop is a CSS pseudo-element. Using
+      // case-insensitive matching here keeps layer names exact in code while
+      // still tolerating browser URL normalization.
+      const layerByLowerName = new Map();
+      for (const layer of this.layers.values()) {
+        layerByLowerName.set(layer.name.toLowerCase(), layer);
+      }
+      const getLayerCI = name => this.getLayer(name) ?? layerByLowerName.get(name.toLowerCase()) ?? null;
+
       // Apply show param first (sets visibility for all layers)
       if (show !== null) {
-        for (const layer of this.layers.values()) {
-          if (show.has(layer.name)) {
+        const showLower = new Set(Array.from(show, n => n.toLowerCase()));
+        for (const [lowerName, layer] of layerByLowerName.entries()) {
+          if (showLower.has(lowerName)) {
             layer.show();
           } else {
             layer.hide();
@@ -347,7 +360,7 @@ export class LayerSystem {
 
       // Apply per-layer properties (overrides show)
       for (const [name, props] of uriLayers.entries()) {
-        const layer = this.getLayer(name);
+        const layer = getLayerCI(name);
         if (!layer) continue;
         if (props.opacity !== undefined) layer.setOpacity(props.opacity);
         if (props.visible !== undefined) {
