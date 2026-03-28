@@ -527,7 +527,3 @@ LGPL-2.1 License - see [LICENSE](LICENSE) file for details
 
 ## What is "millefeuille"?
 "Millefeuille" is French for "a thousand layers," referring to a classic French pastry made of many thin layers of puff pastry and cream.
-
----
-
-**p5.millefeuille** - Because every great sketch is built in layers.
