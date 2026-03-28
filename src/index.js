@@ -11,6 +11,7 @@ export { Layer } from './Layer.js';
 export { Compositor } from './Compositor.js';
 export { LayerUI } from './LayerUI.js';
 export { BlendModes, getBlendModeIndex, DEFAULT_LAYER_OPTIONS } from './constants.js';
+export { parseLayerParams } from './URIStateReader.js';
 
 // Version
 export const VERSION = '0.2.1';
