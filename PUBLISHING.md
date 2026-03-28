@@ -28,13 +28,13 @@ Past history still contains old build artifacts — this does not rewrite histor
 
 For each release:
 
-1. Bump `"version"` in `package.json`
-2. Add the new version to the `"publishedVersions"` array in `package.json` — **CI will reject the publish if this is missing**
-3. Commit both changes
-4. Push the tag:
+1. Bump the version with npm (this also updates `publishedVersions` automatically):
    ```bash
-   git tag v<version>
-   git push origin v<version>
+   npm version <newversion>   # e.g. npm version patch or npm version 0.3.0
+   ```
+2. Push the commit and tag:
+   ```bash
+   git push origin main --follow-tags
    ```
 
 The workflow will then: verify the version/tag match → verify `publishedVersions` → lint → test → build → dry-run pack → publish.
