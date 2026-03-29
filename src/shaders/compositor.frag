@@ -67,9 +67,26 @@ void main() {
     return;
   }
 
-  // Apply blend mode only where layer has content
-  vec3 blendedColor = applyBlendMode(blendMode, bgColor.rgb, layerColor.rgb, finalOpacity);
+  // Un-premultiply for blend math (glsl-blend expects straight-alpha RGB).
+  // Use epsilon guard to avoid instability from very small alpha values.
+  // Divide by layerColor.a (not finalOpacity) — that's how the texture was stored.
+  // Safe: finalOpacity > 0 guarantees layerColor.a > 0.
+  const float EPSILON = 0.0001;
+  vec3 straightLayer = layerColor.rgb / max(layerColor.a, EPSILON);
+  vec3 straightBg    = bgColor.rgb / max(bgColor.a, EPSILON);
 
-  // Output with proper alpha compositing
-  gl_FragColor = vec4(blendedColor, 1.0);
+  // Apply blend mode on straight-alpha colors.
+  // glsl-blend opacity variant is a lerp: blendMode(base, blend) * opacity + base * (1 - opacity).
+  // This gives us the straight-alpha output RGB for the covered region.
+  vec3 blendedStraight = applyBlendMode(blendMode, straightBg, straightLayer, finalOpacity);
+
+  // Porter-Duff source-over in premultiplied space:
+  //   outRGB_premul = blendedStraight * srcA + dst_premul * (1 - srcA)
+  //   outAlpha      = srcA + dstA * (1 - srcA)
+  float srcA = finalOpacity;
+  float dstA = bgColor.a;
+  float outAlpha = srcA + dstA * (1.0 - srcA);
+  vec3 outRgbPremul = blendedStraight * srcA + bgColor.rgb * (1.0 - srcA);
+
+  gl_FragColor = vec4(outRgbPremul, outAlpha);
 }
