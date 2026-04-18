@@ -14,6 +14,10 @@
 - [x] Smoother background texture in the blend modes example (currently pixelated)
 
 ## Ready for work
+- [x] Add `hideAll` and `showAll` methods to LayerSystem to hide/show all layers at once
+- [x] Add `showOnly` method to LayerSystem to show only a specific layer and hide the rest
+- [x] Add `clearAll` method to LayerSystem to clear all layers at once
+- [ ] Support for 2D (canvas API) modes in addition to WebGL
 - [ ] Mark the thumbnails for update after a resize of the canvas or layers
 - [ ] Bundle should create a zipped version of the library files for easier download
 - [ ] Change instance mode example to have multiple sketches on the same page all using p5.millefeuille
