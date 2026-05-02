@@ -1,5 +1,7 @@
 ## 2025-11-23T19:23:30Z @ 29d28cc8488c7614b771823460735a322f60759e
 
+- **2D renderer support landed**: `LayerSystem` now detects the host renderer once, `Layer` delegates to mode-specific surface adapters, and the compositor has separate WebGL and Canvas 2D backends while preserving the public API.
+
 ~~- **Layer resize flag gap (src/LayerSystem.js lines 339-349)**: auto-resize always resizes layers because `Layer` never defines `customSize`. Layers with custom dimensions can’t preserve their overrides, violating the PRD’s resolution override requirement.~~ (Fixed by tracking `customSize` inside `Layer` and skipping auto-resize for bespoke framebuffers.)
 ~~- **Pixel density drift (src/LayerSystem.js lines 339-349)**: resize logic ignores changes to `pixelDensity()`, so framebuffers/compositor buffers stay at the old density, causing blurry composites contrary to PRD §7.~~ (Fixed by tracking pixel density in `LayerSystem` and `Compositor`, plus new tests.)
 ~~- **Blend-mode docs mismatch (README.md lines 17-24 vs 257-273)**: feature list advertises 14 modes but API reference still documents only 5, leaving users unsure which values are supported.~~

@@ -60,6 +60,30 @@ export function getBlendModeIndex(mode) {
 }
 
 /**
+ * Maps blend modes to their native CanvasRenderingContext2D `globalCompositeOperation`
+ * equivalents. ADD and SUBTRACT have no native equivalent and are intentionally absent.
+ */
+export const BLEND_MODE_TO_2D = {
+  [BlendModes.NORMAL]: 'source-over',
+  [BlendModes.MULTIPLY]: 'multiply',
+  [BlendModes.SCREEN]: 'screen',
+  [BlendModes.OVERLAY]: 'overlay',
+  [BlendModes.SOFT_LIGHT]: 'soft-light',
+  [BlendModes.HARD_LIGHT]: 'hard-light',
+  [BlendModes.COLOR_DODGE]: 'color-dodge',
+  [BlendModes.COLOR_BURN]: 'color-burn',
+  [BlendModes.DARKEN]: 'darken',
+  [BlendModes.LIGHTEN]: 'lighten',
+  [BlendModes.DIFFERENCE]: 'difference',
+  [BlendModes.EXCLUSION]: 'exclusion'
+};
+
+/**
+ * Set of blend modes supported in 2D mode. ADD and SUBTRACT are excluded.
+ */
+export const SUPPORTED_2D_BLEND_MODES = new Set(Object.keys(BLEND_MODE_TO_2D));
+
+/**
  * Default layer options
  */
 export const DEFAULT_LAYER_OPTIONS = {

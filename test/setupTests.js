@@ -20,6 +20,8 @@ if (CanvasCtor) {
       canvas,
       fillStyle: '',
       strokeStyle: '',
+      globalAlpha: 1,
+      globalCompositeOperation: 'source-over',
       imageSmoothingEnabled: false,
       fillRect: () => {},
       drawImage: () => {},
@@ -28,6 +30,12 @@ if (CanvasCtor) {
       closePath: () => {},
       save: () => {},
       restore: () => {},
+      setTransform: () => {},
+      translate: () => {},
+      rotate: () => {},
+      scale: () => {},
+      createPattern: () => ({}),
+      createLinearGradient: () => ({ addColorStop: () => {} }),
       getImageData: () => ({
         data: new Uint8ClampedArray((canvas.width || 1) * (canvas.height || 1) * 4)
       })

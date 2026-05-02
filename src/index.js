@@ -1,5 +1,5 @@
 /**
- * p5.millefeuille - A Photoshop-like layer system for p5.js WebGL
+ * p5.millefeuille - A Photoshop-like layer system for p5.js
  *
  * @module p5.millefeuille
  */

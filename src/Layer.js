@@ -1,7 +1,12 @@
-import { BlendModes, DEFAULT_LAYER_OPTIONS } from './constants.js';
+import {
+  BlendModes,
+  DEFAULT_LAYER_OPTIONS,
+  SUPPORTED_2D_BLEND_MODES
+} from './constants.js';
+import { WebGLLayerSurface } from './surfaces/WebGLLayerSurface.js';
 
 /**
- * Represents a single layer backed by a p5.Framebuffer
+ * Represents a single layer backed by a mode-specific drawing surface.
  */
 export class Layer {
   /**
@@ -22,8 +27,10 @@ export class Layer {
     this.opacity = this._clampOpacity(opts.opacity);
     this.blendMode = opts.blendMode;
     this.zIndex = opts.zIndex !== undefined ? opts.zIndex : id;
+    this.isWebGL = opts.isWebGL !== false;
 
-    // Framebuffer options
+    // Canonical public dimension API. Other modules must read these properties
+    // instead of peeking into surface-specific internals.
     this.width = opts.width ?? this.p.width;
     this.height = opts.height ?? this.p.height;
     this.density = opts.density ?? this.p.pixelDensity();
@@ -35,41 +42,22 @@ export class Layer {
       opts.height != null ||
       opts.density != null;
 
-    // Mask reference (can be p5.Framebuffer or p5.Image)
+    // Mask reference.
     this.mask = null;
+    this.surface = null;
 
-    // Create the framebuffer
-    this.framebuffer = this._createFramebuffer();
+    const SurfaceCtor = opts.surfaceCtor || WebGLLayerSurface;
+    this.surface = new SurfaceCtor(this.p, {
+      width: this.width,
+      height: this.height,
+      density: this.density,
+      depth: this.depth,
+      antialias: this.antialias,
+      name: this.name
+    });
 
-    if (!this.framebuffer) {
-      throw new Error(`Failed to create framebuffer for layer ${this.name}`);
-    }
-  }
-
-  /**
-   * Creates the underlying p5.Framebuffer
-   * @private
-   */
-  _createFramebuffer() {
-    try {
-      const options = {
-        width: this.width,
-        height: this.height,
-        density: this.density
-      };
-
-      // Only add depth and antialias if explicitly set
-      if (this.depth !== undefined) {
-        options.depth = this.depth;
-      }
-      if (this.antialias !== undefined) {
-        options.antialias = this.antialias;
-      }
-
-      return this.p.createFramebuffer(options);
-    } catch (e) {
-      console.error(`Error creating framebuffer for layer ${this.name}:`, e);
-      return null;
+    if (!this.surface) {
+      throw new Error(`Failed to create surface for layer ${this.name}`);
     }
   }
 
@@ -118,9 +106,17 @@ export class Layer {
     if (!Object.values(BlendModes).includes(mode)) {
       console.warn(`Invalid blend mode: ${mode}, using NORMAL`);
       this.blendMode = BlendModes.NORMAL;
-    } else {
-      this.blendMode = mode;
+      return this;
     }
+
+    if (!this.isWebGL && !SUPPORTED_2D_BLEND_MODES.has(mode)) {
+      const supportedModes = Array.from(SUPPORTED_2D_BLEND_MODES).join(', ');
+      throw new Error(
+        `Blend mode ${mode} is not supported in 2D mode. Supported 2D modes: ${supportedModes}`
+      );
+    }
+
+    this.blendMode = mode;
     return this;
   }
 
@@ -136,7 +132,9 @@ export class Layer {
 
   /**
    * Attaches a mask to this layer
-   * @param {p5.Framebuffer|p5.Image} maskSource - The mask to apply
+   * In 2D mode, masks must be a p5.Image or 2D p5.Graphics and are scaled to
+   * the layer bounds when composited.
+   * @param {p5.Framebuffer|p5.Image|p5.Graphics} maskSource - The mask to apply
    * @returns {Layer} This layer for chaining
    */
   setMask(maskSource) {
@@ -144,6 +142,11 @@ export class Layer {
       console.warn('Invalid mask source provided');
       return this;
     }
+
+    if (!this.isWebGL && !this._isSupported2DMaskSource(maskSource)) {
+      throw new Error('setMask requires a p5.Image or p5.Graphics in 2D mode. See the API docs for supported mask types.');
+    }
+
     this.mask = maskSource;
     return this;
   }
@@ -173,45 +176,70 @@ export class Layer {
       density === this.p.pixelDensity();
     this.customSize = !matchesCanvas;
 
-    // Dispose old framebuffer
-    if (this.framebuffer) {
-      this.framebuffer.remove();
+    if (this.surface) {
+      this.surface.resize(width, height, density);
     }
-
-    // Create new framebuffer with updated size
-    this.framebuffer = this._createFramebuffer();
   }
 
   /**
-   * Begins drawing to this layer's framebuffer
+   * Begins drawing to this layer's surface
    */
   begin() {
-    if (!this.framebuffer) {
-      console.error(`Cannot begin drawing: framebuffer not initialized for layer ${this.name}`);
+    if (!this.surface) {
+      console.error(`Cannot begin drawing: surface not initialized for layer ${this.name}`);
       return;
     }
-    this.framebuffer.begin();
+    this.surface.begin();
   }
 
   /**
-   * Ends drawing to this layer's framebuffer
+   * Ends drawing to this layer's surface
    */
   end() {
-    if (!this.framebuffer) {
-      console.error(`Cannot end drawing: framebuffer not initialized for layer ${this.name}`);
+    if (!this.surface) {
+      console.error(`Cannot end drawing: surface not initialized for layer ${this.name}`);
       return;
     }
-    this.framebuffer.end();
+    this.surface.end();
   }
 
   /**
    * Disposes of this layer's resources
    */
   dispose() {
-    if (this.framebuffer) {
-      this.framebuffer.remove();
-      this.framebuffer = null;
+    if (this.surface) {
+      this.surface.remove();
+      this.surface = null;
     }
+  }
+
+  get framebuffer() {
+    return this.surface && this.surface.framebuffer ? this.surface.framebuffer : null;
+  }
+
+  get graphics() {
+    return this.surface && this.surface.graphics ? this.surface.graphics : null;
+  }
+
+  /**
+   * @private
+   */
+  _isSupported2DMaskSource(source) {
+    const hasCanvas = typeof HTMLCanvasElement !== 'undefined' && source.canvas instanceof HTMLCanvasElement;
+    const looksLikeImage = hasCanvas &&
+      typeof source.loadPixels === 'function' &&
+      typeof source.begin !== 'function';
+
+    const ctx = source && source.drawingContext;
+    const looksLike2DContext =
+      (typeof CanvasRenderingContext2D !== 'undefined' && ctx instanceof CanvasRenderingContext2D) ||
+      (ctx && typeof ctx.drawImage === 'function' && typeof ctx.clearRect === 'function');
+    const looksLikeGraphics = hasCanvas &&
+      !!source._renderer &&
+      looksLike2DContext;
+
+    // duck-typing because instanceof p5.Image / p5.Graphics is unreliable across builds
+    return looksLikeImage || looksLikeGraphics;
   }
 
   /**

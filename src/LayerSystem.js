@@ -2,6 +2,8 @@ import { Layer } from './Layer.js';
 import { Compositor } from './Compositor.js';
 import { LayerUI } from './LayerUI.js';
 import { parseLayerParams } from './URIStateReader.js';
+import { WebGLLayerSurface } from './surfaces/WebGLLayerSurface.js';
+import { Canvas2DLayerSurface } from './surfaces/Canvas2DLayerSurface.js';
 
 /**
  * Main layer system manager
@@ -17,23 +19,22 @@ export class LayerSystem {
     this._uriBaseName = settings.uriBaseName ?? 'layers';
     this._uriApplied = false;
 
-    // Validate WebGL mode
+    // Validate initialized canvas mode.
     if (!this.p._renderer || !this.p._renderer.drawingContext) {
       throw new Error('Canvas not initialized. Make sure createCanvas() is called before createLayerSystem()');
     }
 
-    if (this.p._renderer.drawingContext instanceof WebGLRenderingContext ||
-        this.p._renderer.drawingContext instanceof WebGL2RenderingContext) {
-      // WebGL mode confirmed
-    } else {
-      throw new Error('LayerSystem requires WebGL mode. Use createCanvas(w, h, WEBGL)');
-    }
+    const ctx = this.p._renderer.drawingContext;
+    this.isWebGL =
+      (typeof WebGLRenderingContext !== 'undefined' && ctx instanceof WebGLRenderingContext) ||
+      (typeof WebGL2RenderingContext !== 'undefined' && ctx instanceof WebGL2RenderingContext);
+    this._SurfaceCtor = this.isWebGL ? WebGLLayerSurface : Canvas2DLayerSurface;
 
     this.layers = new Map(); // id -> Layer
     this.layerNames = new Map(); // name -> id (for string-based lookups)
     this.layerIdCounter = 0;
     this.activeLayerId = null;
-    this.compositor = new Compositor(p5Instance);
+    this.compositor = new Compositor(p5Instance, this.isWebGL);
     this.ui = null; // LayerUI instance
 
     // Track if we're auto-resizing
@@ -85,6 +86,8 @@ export class LayerSystem {
     const layerName = name || `Layer ${id}`;
     const layer = new Layer(this.p, id, layerName, {
       ...options,
+      isWebGL: this.isWebGL,
+      surfaceCtor: this._SurfaceCtor,
       zIndex: options.zIndex !== undefined ? options.zIndex : id
     });
 
@@ -262,22 +265,17 @@ export class LayerSystem {
   }
 
   /**
-   * Clears the pixel contents of all layer framebuffers without marking them as drawn to
+   * Clears the pixel contents of all layer surfaces without marking them as drawn to.
    * @returns {LayerSystem} This system for chaining
    */
   clearAll() {
-    // Remember which layer is active so we can skip it in the loop below: end() resets activeLayerId and already schedules a thumbnail update for it
     const previouslyActiveId = this.activeLayerId;
     if (previouslyActiveId !== null) {
       console.warn('clearAll() called while a layer is active. Ending active layer first.');
       this.end();
     }
     for (const layer of this.layers.values()) {
-      // Raw framebuffer access is deliberate to avoid re-entering LayerSystem.begin/end state machine mid-loop
-      layer.framebuffer.begin();
-      this.p.clear();
-      layer.framebuffer.end();
-      // Skip the layer that was active: this.end() already scheduled its thumbnail update
+      layer.surface.clear();
       if (layer.id !== previouslyActiveId &&
           this.ui && typeof this.ui.scheduleThumbnailUpdate === 'function') {
         this.ui.scheduleThumbnailUpdate(layer.id, { needsCapture: true });

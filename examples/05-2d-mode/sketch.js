@@ -4,19 +4,17 @@ let fruitArt;
 let gamepadArt;
 
 async function setup() {
-  createCanvas(800, 600, WEBGL).parent('canvas-container');
+  createCanvas(800, 600).parent('canvas-container');
   imageMode(CENTER);
 
-  // Load images with callbacks instead of async/await
-  flowerArt = await loadImage('assets/flower.png');
-  fruitArt = await loadImage('assets/fruits.png');
-  gamepadArt = await loadImage('assets/gamepad.png');
+  flowerArt = await loadImage('../01-basic/assets/flower.png');
+  fruitArt = await loadImage('../01-basic/assets/fruits.png');
+  gamepadArt = await loadImage('../01-basic/assets/gamepad.png');
 
   ls = createLayerSystem();
   ls.createLayer('Backdrop');
   ls.createLayer('Produce');
   ls.createLayer('Gamepad');
-
   ls.createUI();
 }
 
@@ -30,7 +28,7 @@ function draw() {
 function drawBackdropLayer() {
   ls.begin('Backdrop');
   clear();
-  background("#108bb4ff");
+  background('#108bb4ff');
 
   if (flowerArt) {
     push();
@@ -47,7 +45,7 @@ function drawProduceLayer() {
 
   if (fruitArt) {
     push();
-    translate(-width * 0.2, height * 0.08);
+    translate(width * 0.2, height * 0.08);
     scale(0.36);
     image(fruitArt, 0, 0);
     pop();
@@ -62,6 +60,7 @@ function drawCatLayer() {
 
   if (gamepadArt) {
     push();
+    imageMode(CENTER);
     translate(width * 0.2, height * 0.2);
     scale(0.3);
     image(gamepadArt, 0, 0);

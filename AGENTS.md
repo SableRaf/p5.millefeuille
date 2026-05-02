@@ -2,17 +2,17 @@
 
 ## Project Overview
 
-**p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js WebGL sketches. Built on top of `p5.Framebuffer`, it provides an intuitive API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
+**p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js sketches. In WebGL mode it uses `p5.Framebuffer`; in 2D mode it uses `p5.Graphics`, while preserving the same public API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
 
 ### Core Purpose
-To provide an easy-to-use, Photoshop-like layer system for p5.js WebGL sketches, enabling creative coders to build complex layered compositions without manually juggling framebuffers.
+To provide an easy-to-use, Photoshop-like layer system for p5.js sketches, enabling creative coders to build complex layered compositions without manually juggling framebuffers or graphics buffers.
 
 ### Key Features
 - Layer management (create, remove, reorder)
 - Blend modes (NORMAL, MULTIPLY, SCREEN, ADD, SUBTRACT)
 - Layer properties (visibility, opacity, z-index)
 - Masking support for selective revealing
-- Performance-optimized single-pass WebGL compositing
+- Performance-optimized compositing in both WebGL and 2D canvas modes
 - Auto-resize capability for responsive canvases
 - Clean, Photoshop-inspired API
 
@@ -31,11 +31,11 @@ The main orchestrator that manages the layer stack and coordinates rendering.
 - Coordinates drawing operations (begin/end)
 - Manages layer properties (visibility via show/hide, opacity, blend mode, z-index, masks)
 - Detects canvas resizes and updates layers accordingly
-- Validates WebGL mode on construction
+- Detects host renderer mode on construction and selects adapters once
 
 **Important Implementation Details:**
 - Auto-detects p5 instance in global mode (checks `window.p5.instance`)
-- Validates WebGL context on initialization
+- Detects WebGL vs 2D mode from the host renderer
 - Tracks active layer to prevent nested begin calls
 - Maintains canvas size state for auto-resize detection
 - Uses auto-incrementing IDs for layers
@@ -43,14 +43,14 @@ The main orchestrator that manages the layer stack and coordinates rendering.
 - Methods return Layer instances for chaining support
 
 #### 2. **Layer** ([src/Layer.js](src/Layer.js))
-Represents a single layer backed by a `p5.Framebuffer` with metadata.
+Represents a single layer backed by a mode-specific surface with metadata.
 
 **Key Responsibilities:**
-- Wraps a `p5.Framebuffer` with rendering metadata
+- Wraps a `p5.Framebuffer` (WebGL) or `p5.Graphics` (2D) with rendering metadata
 - Manages layer properties (visible via show/hide, opacity, blendMode, zIndex)
-- Handles framebuffer lifecycle (create, resize, dispose)
+- Handles surface lifecycle (create, resize, dispose)
 - Provides mask attachment/removal
-- Implements begin/end drawing to the layer's framebuffer
+- Implements begin/end drawing to the layer surface
 - **Supports method chaining** - all setter methods return `this`
 
 **Important Implementation Details:**
@@ -219,23 +219,22 @@ p5.millefeuille/
 ## Technical Constraints
 
 ### Requirements
-- **p5.js Version:** 2.1.1+ (for stable `createFramebuffer` API)
-- **Rendering Mode:** WebGL only (2D mode not supported)
-- **Browser:** Modern browsers with WebGL 1.0 or 2.0 support
+- **p5.js Version:** 2.1.1+
+- **Rendering Mode:** Works in both WebGL and default 2D canvas mode
+- **Browser:** Modern browsers with either WebGL support or standard Canvas 2D compositing
 
 ### Limitations
-- WebGL mode only (no 2D renderer support)
-- Limited to WebGL-supported blend modes
-- SCREEN blend mode uses LIGHTEST as approximation
+- `ADD` and `SUBTRACT` blend modes are WebGL-only
+- SCREEN blend mode uses LIGHTEST as approximation in the WebGL path
 - Masks must be same size as layer (or will be scaled)
 - No adjustment layers or smart objects (not in MVP scope)
 - No layer groups or nesting
 
 ### Performance Considerations
-- Each layer requires a separate framebuffer allocation
+- Each layer requires a separate framebuffer or graphics allocation
 - More layers = more compositing passes
-- Masking requires shader switching (slight overhead)
-- Auto-resize recreates all framebuffers on canvas size change
+- Masking in 2D mode adds one scratch compositing pass for that layer
+- Auto-resize recreates all backing surfaces on canvas size change
 - Recommended: 3-5 full-screen layers for 60fps on mid-range hardware
 
 ## Development Workflow
@@ -361,10 +360,10 @@ layers.removeLayer('OldLayer');
 
 ### Common Errors
 1. **"Canvas not initialized"** - `createLayerSystem()` called before `createCanvas()`
-2. **"LayerSystem requires WebGL mode"** - Canvas not created with WEBGL parameter
+2. **"Blend mode ADD is not supported in 2D mode"** - `ADD` or `SUBTRACT` was requested on a 2D sketch
 3. **"Layer X not found"** - Invalid layer ID or name passed to methods
 4. **"Layer X is already active"** - Nested `begin()` calls without `end()`
-5. **"Failed to create framebuffer"** - WebGL context lost or insufficient resources
+5. **"Failed to create surface"** - WebGL context lost or graphics allocation failed
 
 ### Validation
 - Layer IDs and names are validated on all methods (console.warn if not found)
@@ -376,7 +375,6 @@ layers.removeLayer('OldLayer');
 
 Based on PRD "Non-Goals" section:
 - Full Photoshop feature parity (adjustment layers, smart objects)
-- 2D renderer support
 - GUI layer editor
 - Additional blend modes (OVERLAY, SOFT_LIGHT, etc.)
 - Layer groups/nesting
@@ -395,15 +393,16 @@ console.log(layers.getLayerInfo());
 console.log(layers.activeLayerId); // null if none active
 ```
 
-### Verify WebGL Context
+### Verify Renderer Mode
 ```javascript
 console.log(p5Instance._renderer.drawingContext);
-// Should be WebGLRenderingContext or WebGL2RenderingContext
+// WebGL sketches: WebGLRenderingContext or WebGL2RenderingContext
+// 2D sketches: CanvasRenderingContext2D
 ```
 
 ### Performance Profiling
 - Use browser DevTools Performance tab
-- Watch for excessive framebuffer allocations
+- Watch for excessive framebuffer or graphics allocations
 - Check draw calls in WebGL inspector
 - Monitor memory usage for framebuffer leaks
 
@@ -424,7 +423,7 @@ We are using p5.js 2.1.1 so refer to the latest documentation at https://beta.p5
 ## Contributing Guidelines
 
 When making changes:
-1. Maintain WebGL-only constraint
+1. Preserve parity between WebGL and 2D public APIs
 2. Preserve state before/after compositing
 3. Add console warnings for invalid operations (not silent failures)
 4. Update README.md for API changes

@@ -3,7 +3,7 @@
 
 # p5.millefeuille
 
-**p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js WebGL sketches. Built on top of `p5.Framebuffer`, it provides an intuitive API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
+**p5.millefeuille** is a lightweight library that brings Photoshop-style layers to p5.js sketches. In WebGL mode it uses `p5.Framebuffer`; in 2D mode it uses `p5.Graphics`, while preserving the same public API for creating, compositing, and manipulating multiple rendering layers with blend modes, opacity, and masking support.
 
 ## Installation
 
@@ -15,14 +15,15 @@ In your p5.js project, add p5.millefeuille to your `index.html` using jsdelivr C
 
 ## Requirements
 
-- p5.js 2.1.1 or higher (for stable `createFramebuffer` API)
-- WebGL mode (`createCanvas(w, h, WEBGL)`)
+- p5.js 2.1.1 or higher
+- Works with both `createCanvas(w, h, WEBGL)` and the default 2D `createCanvas(w, h)`
+- `BlendModes.ADD` and `BlendModes.SUBTRACT` are WebGL-only
 
 ## Motivation
 I wanted a layer system that felt familiar to anyone who's used image editing software like Photoshop, GIMP, Procreate, etc, but tailored for creative coding in p5.js. 
 
 ## What is this not
-Millefeuille is not an image editing library. It does not provide tools for pixel-level manipulation, filters, or effects like Photoshop, GIMP, Krita, or other dedicated image editors. Instead, it focuses on managing multiple render targets (layers) and compositing them efficiently using WebGL shaders.
+Millefeuille is not an image editing library. It does not provide tools for pixel-level manipulation, filters, or effects like Photoshop, GIMP, Krita, or other dedicated image editors. Instead, it focuses on managing multiple render targets (layers) and compositing them efficiently, using GLSL shaders in WebGL mode and native canvas compositing in 2D mode.
 
 ## Features
 - **Layer UI**: Optional interactive panel for controlling layers at runtime
@@ -39,7 +40,7 @@ Millefeuille is not an image editing library. It does not provide tools for pixe
 let layers;
 
 function setup() {
-  createCanvas(800, 600, WEBGL);
+  createCanvas(800, 600);
 
   // Create the layer system using the addon API
   layers = createLayerSystem();
@@ -253,7 +254,7 @@ Shows the specified layer and hides all others.
 
 #### `clearAll()`
 
-Clears the pixel contents of all layer framebuffers. Does not affect opacity, blend mode, masks, z-index, or visibility.
+Clears the pixel contents of all layer surfaces. Does not affect opacity, blend mode, masks, z-index, or visibility.
 
 **Returns:** `LayerSystem` - This system for chaining
 
@@ -524,6 +525,14 @@ See [examples/03-thumbnail-cropping/index.html](examples/03-thumbnail-cropping/i
 
 See [examples/04-full-window/index.html](examples/04-full-window/index.html) for a responsive sketch that drives `resizeCanvas()` from the built-in `windowResized()` callback so every framebuffer and the compositor stay razor sharp across window and pixel-density changes.
 
+### 2D Canvas Mode
+
+See [examples/05-2d-mode/index.html](examples/05-2d-mode/index.html) for a default 2D canvas sketch using the same `begin()` / `end()` / `render()` API.
+
+### 2D Blend Modes
+
+See [examples/06-2d-blend-modes/index.html](examples/06-2d-blend-modes/index.html) for the 2D blend-mode subset and a side-by-side WebGL comparison.
+
 ## Performance Tips
 
 1. **Minimize layer count**: More layers = more compositing passes
@@ -535,13 +544,13 @@ See [examples/04-full-window/index.html](examples/04-full-window/index.html) for
 ## Architecture
 
 - **LayerSystem**: Manages the layer stack and coordinates rendering
-- **Layer**: Wraps a `p5.Framebuffer` with metadata (opacity, blend mode, etc.)
-- **Compositor**: Handles the rendering pipeline using custom shaders for all layer compositing
+- **Layer**: Wraps a mode-specific drawing surface (`p5.Framebuffer` in WebGL, `p5.Graphics` in 2D) with metadata
+- **Compositor**: Handles the rendering pipeline using custom shaders in WebGL mode and native canvas compositing in 2D mode
 
 ## Limitations
 
-- WebGL mode only (no 2D renderer support)
-- Limited to WebGL-supported blend modes
+- `BlendModes.ADD` and `BlendModes.SUBTRACT` are WebGL-only
+- 2D mode masks accept `p5.Image` and 2D `p5.Graphics` sources
 - Masks must be same size as layer (or will be scaled)
 - No adjustment layers or smart objects (not in MVP scope)
 

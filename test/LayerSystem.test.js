@@ -156,25 +156,19 @@ describe('LayerSystem', () => {
     warnSpy.mockRestore();
   });
 
-  test('clearAll() calls framebuffer.begin/end and p.clear() for each layer', () => {
+  test('clearAll() clears each layer surface', () => {
     const p5 = createP5Stub();
     const system = new LayerSystem(p5);
     const a = system.createLayer('A');
     const b = system.createLayer('B');
 
-    const beginA = jest.spyOn(a.framebuffer, 'begin');
-    const endA = jest.spyOn(a.framebuffer, 'end');
-    const beginB = jest.spyOn(b.framebuffer, 'begin');
-    const endB = jest.spyOn(b.framebuffer, 'end');
-    const clearSpy = jest.spyOn(p5, 'clear');
+    const clearA = jest.spyOn(a.surface, 'clear');
+    const clearB = jest.spyOn(b.surface, 'clear');
 
     const result = system.clearAll();
 
-    expect(beginA).toHaveBeenCalledTimes(1);
-    expect(endA).toHaveBeenCalledTimes(1);
-    expect(beginB).toHaveBeenCalledTimes(1);
-    expect(endB).toHaveBeenCalledTimes(1);
-    expect(clearSpy).toHaveBeenCalledTimes(2);
+    expect(clearA).toHaveBeenCalledTimes(1);
+    expect(clearB).toHaveBeenCalledTimes(1);
     expect(result).toBe(system);
   });
 
