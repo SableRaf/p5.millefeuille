@@ -253,7 +253,7 @@ Shows the specified layer and hides all others.
 
 #### `clearAll()`
 
-Clears the pixel contents of all layer framebuffers without marking them as drawn to. Does not affect opacity, blend mode, masks, z-index, or visibility.
+Clears the pixel contents of all layer framebuffers. Does not affect opacity, blend mode, masks, z-index, or visibility.
 
 **Returns:** `LayerSystem` - This system for chaining
 
