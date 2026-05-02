@@ -38,9 +38,6 @@ export class Layer {
     // Mask reference (can be p5.Framebuffer or p5.Image)
     this.mask = null;
 
-    // Track if layer has been drawn to at least once
-    this.hasBeenDrawnTo = false;
-
     // Create the framebuffer
     this.framebuffer = this._createFramebuffer();
 
@@ -205,9 +202,6 @@ export class Layer {
       return;
     }
     this.framebuffer.end();
-    
-    // Mark that this layer has been drawn to
-    this.hasBeenDrawnTo = true;
   }
 
   /**
@@ -232,7 +226,6 @@ export class Layer {
       blendMode: this.blendMode,
       zIndex: this.zIndex,
       hasMask: !!this.mask,
-      hasBeenDrawnTo: this.hasBeenDrawnTo,
       width: this.width,
       height: this.height,
       density: this.density,

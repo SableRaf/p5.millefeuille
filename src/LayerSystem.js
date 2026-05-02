@@ -273,9 +273,7 @@ export class LayerSystem {
       this.end();
     }
     for (const layer of this.layers.values()) {
-      // Raw framebuffer access is deliberate:
-      // - clear ≠ draw: hasBeenDrawnTo must not be set
-      // - avoids re-entering LayerSystem.begin/end state machine mid-loop
+      // Raw framebuffer access is deliberate to avoid re-entering LayerSystem.begin/end state machine mid-loop
       layer.framebuffer.begin();
       this.p.clear();
       layer.framebuffer.end();

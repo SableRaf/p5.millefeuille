@@ -194,16 +194,6 @@ describe('LayerSystem', () => {
     warnSpy.mockRestore();
   });
 
-  test('clearAll() does not set hasBeenDrawnTo', () => {
-    const p5 = createP5Stub();
-    const system = new LayerSystem(p5);
-    const a = system.createLayer('A');
-
-    expect(a.hasBeenDrawnTo).toBe(false);
-    system.clearAll();
-    expect(a.hasBeenDrawnTo).toBe(false);
-  });
-
   test('clearAll() with UI and no active layer schedules thumbnail for each layer', () => {
     const p5 = createP5Stub();
     const system = new LayerSystem(p5);
