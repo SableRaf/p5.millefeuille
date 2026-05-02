@@ -266,7 +266,7 @@ export class LayerSystem {
    * @returns {LayerSystem} This system for chaining
    */
   clearAll() {
-    // Capture before end() clears it; end() already calls scheduleThumbnailUpdate for this layer
+    // Remember which layer is active so we can skip it in the loop below: end() resets activeLayerId and already schedules a thumbnail update for it
     const previouslyActiveId = this.activeLayerId;
     if (previouslyActiveId !== null) {
       console.warn('clearAll() called while a layer is active. Ending active layer first.');
