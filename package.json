@@ -17,7 +17,7 @@
     "test": "jest",
     "version": "node -e \"const fs=require('fs'),p=require('./package.json');p.publishedVersions=[...new Set([...p.publishedVersions||[],p.version])];fs.writeFileSync('./package.json',JSON.stringify(p,null,2)+'\\n')\" && git add package.json",
     "lint": "eslint src/**/*.js",
-    "examples": "sh -ec '[ -d dist ] || npm run build; lsof -ti:8000 | xargs kill -9 2>/dev/null || true; exec npx http-server . -p 8000 -o /examples/'",
+    "examples": "sh -ec 'npm run build; lsof -ti:8000 | xargs kill -9 2>/dev/null || true; exec npx http-server . -p 8000 -o /examples/'",
     "predeploy": "npm run build && webpack --config webpack.deploy.js",
     "deploy": "gh-pages -d .gh-pages"
   },
