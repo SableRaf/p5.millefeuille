@@ -219,6 +219,74 @@ export class LayerSystem {
   }
 
   /**
+   * Hides all layers
+   * @returns {LayerSystem} This system for chaining
+   */
+  hideAll() {
+    for (const layer of this.layers.values()) {
+      layer.hide();
+    }
+    return this;
+  }
+
+  /**
+   * Shows all layers
+   * @returns {LayerSystem} This system for chaining
+   */
+  showAll() {
+    for (const layer of this.layers.values()) {
+      layer.show();
+    }
+    return this;
+  }
+
+  /**
+   * Shows the specified layer and hides all others
+   * @param {number|string} layerIdOrName - The layer ID or name
+   * @returns {Layer|null} The target layer, or null if not found
+   */
+  showOnly(layerIdOrName) {
+    const target = this._getLayerById(layerIdOrName);
+    if (!target) {
+      console.warn(`Layer ${layerIdOrName} not found`);
+      return null;
+    }
+    for (const layer of this.layers.values()) {
+      if (layer.id === target.id) {
+        layer.show();
+      } else {
+        layer.hide();
+      }
+    }
+    return target;
+  }
+
+  /**
+   * Clears the pixel contents of all layer framebuffers without marking them as drawn to
+   * @returns {LayerSystem} This system for chaining
+   */
+  clearAll() {
+    // Remember which layer is active so we can skip it in the loop below: end() resets activeLayerId and already schedules a thumbnail update for it
+    const previouslyActiveId = this.activeLayerId;
+    if (previouslyActiveId !== null) {
+      console.warn('clearAll() called while a layer is active. Ending active layer first.');
+      this.end();
+    }
+    for (const layer of this.layers.values()) {
+      // Raw framebuffer access is deliberate to avoid re-entering LayerSystem.begin/end state machine mid-loop
+      layer.framebuffer.begin();
+      this.p.clear();
+      layer.framebuffer.end();
+      // Skip the layer that was active: this.end() already scheduled its thumbnail update
+      if (layer.id !== previouslyActiveId &&
+          this.ui && typeof this.ui.scheduleThumbnailUpdate === 'function') {
+        this.ui.scheduleThumbnailUpdate(layer.id, { needsCapture: true });
+      }
+    }
+    return this;
+  }
+
+  /**
    * Sets the opacity of a layer
    * @param {number|string} layerIdOrName - The layer ID or name
    * @param {number} opacity - Opacity value between 0 and 1

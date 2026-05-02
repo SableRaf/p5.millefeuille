@@ -224,6 +224,41 @@ layers.show('Effects').setOpacity(0.5);
 
 ---
 
+#### `hideAll()`
+
+Hides all layers.
+
+**Returns:** `LayerSystem` - This system for chaining
+
+---
+
+#### `showAll()`
+
+Shows all layers.
+
+**Returns:** `LayerSystem` - This system for chaining
+
+---
+
+#### `showOnly(layerIdOrName)`
+
+Shows the specified layer and hides all others.
+
+**Parameters:**
+- `layerIdOrName` (number|string) - The layer ID or name
+
+**Returns:** `Layer|null` - The layer, or null if not found
+
+---
+
+#### `clearAll()`
+
+Clears the pixel contents of all layer framebuffers. Does not affect opacity, blend mode, masks, z-index, or visibility.
+
+**Returns:** `LayerSystem` - This system for chaining
+
+---
+
 #### `setOpacity(layerIdOrName, opacity)`
 
 Sets layer opacity.

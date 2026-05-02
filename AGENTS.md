@@ -184,6 +184,15 @@ p5.millefeuille/
 - `setLayerIndex(layerIdOrName, zIndex)` → Absolute z-index
 - `moveLayer(layerIdOrName, delta)` → Relative z-index change
 
+**Bulk Operations:**
+- `hideAll()` → Hides all layers; returns `LayerSystem`
+- `showAll()` → Shows all layers; returns `LayerSystem`
+- `showOnly(layerIdOrName)` → Shows one layer, hides the rest; returns `Layer|null`
+- `clearAll()` → Clears all framebuffer pixels; returns `LayerSystem`
+  - Uses raw `layer.framebuffer.begin/end` (not `LayerSystem.begin/end`) to avoid re-entering the active-layer state machine mid-loop
+  - If a layer is currently active, calls `this.end()` first (mirrors `begin()`'s auto-recovery)
+  - Calls `ui.scheduleThumbnailUpdate` for each cleared layer; skips the previously-active layer because `end()` already scheduled it
+
 **Masking (accept ID or name, return Layer for chaining):**
 - `setMask(layerIdOrName, maskSource)` → Attach mask (Framebuffer or Image)
 - `clearMask(layerIdOrName)` → Remove mask

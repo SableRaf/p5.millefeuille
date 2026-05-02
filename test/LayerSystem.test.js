@@ -85,4 +85,147 @@ describe('LayerSystem', () => {
     expect(layer.density).toBe(2);
     expect(layer.framebuffer).not.toBe(originalFramebuffer);
   });
+
+  test('hideAll() hides all layers and returns system', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+
+    const result = system.hideAll();
+
+    expect(a.visible).toBe(false);
+    expect(b.visible).toBe(false);
+    expect(result).toBe(system);
+  });
+
+  test('showAll() shows all layers and returns system', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+    a.hide();
+    b.hide();
+
+    const result = system.showAll();
+
+    expect(a.visible).toBe(true);
+    expect(b.visible).toBe(true);
+    expect(result).toBe(system);
+  });
+
+  test('showOnly() by name shows target, hides others, returns Layer', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+    const c = system.createLayer('C');
+
+    const result = system.showOnly('B');
+
+    expect(result).toBe(b);
+    expect(a.visible).toBe(false);
+    expect(b.visible).toBe(true);
+    expect(c.visible).toBe(false);
+  });
+
+  test('showOnly() by numeric ID shows target, hides others, returns Layer', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+
+    const result = system.showOnly(a.id);
+
+    expect(result).toBe(a);
+    expect(a.visible).toBe(true);
+    expect(b.visible).toBe(false);
+  });
+
+  test('showOnly() with nonexistent name warns, returns null, no visibility changed', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = system.showOnly('nonexistent');
+
+    expect(result).toBeNull();
+    expect(a.visible).toBe(true);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  test('clearAll() calls framebuffer.begin/end and p.clear() for each layer', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+
+    const beginA = jest.spyOn(a.framebuffer, 'begin');
+    const endA = jest.spyOn(a.framebuffer, 'end');
+    const beginB = jest.spyOn(b.framebuffer, 'begin');
+    const endB = jest.spyOn(b.framebuffer, 'end');
+    const clearSpy = jest.spyOn(p5, 'clear');
+
+    const result = system.clearAll();
+
+    expect(beginA).toHaveBeenCalledTimes(1);
+    expect(endA).toHaveBeenCalledTimes(1);
+    expect(beginB).toHaveBeenCalledTimes(1);
+    expect(endB).toHaveBeenCalledTimes(1);
+    expect(clearSpy).toHaveBeenCalledTimes(2);
+    expect(result).toBe(system);
+  });
+
+  test('clearAll() with active layer warns and ends active layer first', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    system.begin(a.id);
+    expect(system.activeLayerId).toBe(a.id);
+
+    system.clearAll();
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('clearAll() called while a layer is active'));
+    expect(system.activeLayerId).toBeNull();
+    warnSpy.mockRestore();
+  });
+
+  test('clearAll() with UI and no active layer schedules thumbnail for each layer', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+
+    system.ui = { scheduleThumbnailUpdate: jest.fn() };
+
+    system.clearAll();
+
+    expect(system.ui.scheduleThumbnailUpdate).toHaveBeenCalledTimes(2);
+    expect(system.ui.scheduleThumbnailUpdate).toHaveBeenCalledWith(a.id, { needsCapture: true });
+    expect(system.ui.scheduleThumbnailUpdate).toHaveBeenCalledWith(b.id, { needsCapture: true });
+  });
+
+  test('clearAll() with UI and active layer: active thumbnail scheduled once by end(), others by loop', () => {
+    const p5 = createP5Stub();
+    const system = new LayerSystem(p5);
+    const a = system.createLayer('A');
+    const b = system.createLayer('B');
+
+    system.ui = { scheduleThumbnailUpdate: jest.fn() };
+
+    system.begin(a.id);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    system.clearAll();
+    warnSpy.mockRestore();
+
+    const calls = system.ui.scheduleThumbnailUpdate.mock.calls;
+    const callsForA = calls.filter(([id]) => id === a.id);
+    const callsForB = calls.filter(([id]) => id === b.id);
+    expect(callsForA).toHaveLength(1); // scheduled by end(), not by clearAll loop
+    expect(callsForB).toHaveLength(1); // scheduled by clearAll loop
+  });
 });
